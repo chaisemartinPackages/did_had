@@ -3,7 +3,7 @@ Estimation of treatment effect in heterogeneous adoption designs.
 
 [Short description](#Short-description) | [Vignettes](#vignettes) | [Setup](#Setup) | [Syntax](#Syntax) | [Description](#Description)
 
-[Options](#Options) | [Example](#Example) | [FAQ](#FAQ) | [Auxiliary packages](#Auxiliary packages) | [References](#References) | [Authors](#Authors)
+[Options](#Options) | [Example](#Example) | [FAQ](#FAQ) | [Auxiliary packages](#Auxiliary-packages) | [References](#References) | [Authors](#Authors)
 
 ## Short description
 
