@@ -3,7 +3,7 @@ Estimation of treatment effect in heterogeneous adoption designs.
 
 [Short description](#Short-description) | [Vignettes](#vignettes) | [Setup](#Setup) | [Syntax](#Syntax) | [Description](#Description)
 
-[Options](#Options) | [Example](#Example) | [FAQ](#FAQ) | [References](#References) | [Authors](#Authors)
+[Options](#Options) | [Example](#Example) | [FAQ](#FAQ) | [Auxiliary packages](#Auxiliary packages) | [References](#References) | [Authors](#Authors)
 
 ## Short description
 
@@ -73,12 +73,40 @@ The estimator also applies to scenarios with more than two periods. The general 
         set to 0.05.
         
 **kernel(string)** allows you to specify the kernel function used by lprobust to estimate the optimal bandwidth and mu. Possible
-        choices are **triangular**, **epanechnikov**, **uniform** and **gaussian**.  By default, the program uses a uniform kernel.
+        choices are **<ins>triangular**, **<ins>epanechnikov**, **<ins>uniform** and **<ins>gaussian**.  By default, the program uses a uniform kernel.
         
-graph_off: by default, did_had outputs an event-study like graph with the effect estimates and the corresponding standard
-        errors according to the numbers you specified in effects(#) and placebo(#). When specifying graph_off, the production of
+**graph_off** by default, **did_had** outputs an event-study like graph with the effect estimates and the corresponding standard
+        errors according to the numbers you specified in **effects(#)** and **placebo(#)**. When specifying **graph_off**, the production of
         this graph will be suppressed.
 
-        
+## Example    
 
+Installing the package and loading the data for the example:
+```s
+ssc install did_had, replace
+use "https://raw.githubusercontent.com/chaisemartinPackages/did_had/main/tutorial_data.dta", clear
+```
+
+Estimating the effects over five periods and placebos for four pre-treatment periods:      
+```s
+did_had y g t d, effects(5) placebo(4)
+```
+
+Doing the same estimation, but with a triangular kernel and suppressing the graph output:
+```s
+did_had y g t d, effects(5) placebo(4) kernel(tri) graph_off
+```
+
+Changing the level of the confidence interval:
+```s
+did_had y g t d, effects(5) placebo(4) level(0.1)
+```
+
+## FAQ
+
+## Auxiliary packages
+
+## References
+
+## Authors
 
