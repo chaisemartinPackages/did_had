@@ -114,7 +114,7 @@ Calonico, S., M. D. Cattaneo, and M. H. Farrell (2018). [On the Effect of Bias E
 
 ## Auxiliary packages
 
-The command requires that the **lprobust** package be installed on the user's machine.
+The command requires that the [**lprobust**](https://github.com/nppackages/nprobust/tree/master) package be installed on the user's machine.
 
 ## Authors
 
