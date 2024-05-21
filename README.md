@@ -110,3 +110,12 @@ did_had y g t d, effects(5) placebo(4) level(0.1)
 
 ## Authors
 
+Clément de Chaisemartin, Economics Department, Sciences Po, France.  
+Xavier D'Haultfoeuille, CREST-ENSAE, France.  
+Diego Ciccia, Economics Department, Sciences Po, France.  
+Felix Knau, Economics Department, Sciences Po, France.   
+Doulo Sow, CREST-ENSAE, France.  
+
+**<ins>Contact:</ins>**  
+[chaisemartin.packages@gmail.com](mailto:chaisemartin.packages@gmail.com)
+
