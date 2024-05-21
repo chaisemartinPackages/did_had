@@ -108,6 +108,13 @@ did_had y g t d, effects(5) placebo(4) level(0.1)
 
 ## References
 
+de Chaisemartin, C, D'Haultfoeuille, X (2024). [Two-way Fixed Effects and Difference-in-Difference Estimators in Heterogeneous Adoption Designs.
+](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4284811).
+
+Calonico, S., M. D. Cattaneo, and M. H. Farrell (2018). [On the Effect of Bias Estimation on Coverage Accuracy in NonparametricInference.
+](https://nppackages.github.io/references/Calonico-Cattaneo-Farrell_2018_JASA.pdf). Journal of Statistical Software, 91(8): 1-33. doi: [10.18637/jss.v091.i08.](https://www.jstatsoft.org/article/view/v091i08)
+
+
 ## Authors
 
 Clément de Chaisemartin, Economics Department, Sciences Po, France.  
