@@ -104,8 +104,6 @@ did_had y g t d, effects(5) placebo(4) level(0.1)
 
 ## FAQ
 
-## Auxiliary packages
-
 ## References
 
 de Chaisemartin, C, D'Haultfoeuille, X (2024). [Two-way Fixed Effects and Difference-in-Difference Estimators in Heterogeneous Adoption Designs.
@@ -114,6 +112,9 @@ de Chaisemartin, C, D'Haultfoeuille, X (2024). [Two-way Fixed Effects and Differ
 Calonico, S., M. D. Cattaneo, and M. H. Farrell (2018). [On the Effect of Bias Estimation on Coverage Accuracy in NonparametricInference.
 ](https://nppackages.github.io/references/Calonico-Cattaneo-Farrell_2018_JASA.pdf). Journal of Statistical Software, 91(8): 1-33. doi: [10.18637/jss.v091.i08.](https://www.jstatsoft.org/article/view/v091i08)
 
+## Auxiliary packages
+
+The command requires that the **lprobust** package be installed on the user's machine.
 
 ## Authors
 
