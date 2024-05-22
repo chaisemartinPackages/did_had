@@ -1,16 +1,13 @@
 # did_had
 Estimation of treatment effect in heterogeneous adoption designs.
 
-[Short description](#Short-description) | [Vignettes](#vignettes) | [Setup](#Setup) | [Syntax](#Syntax) | [Description](#Description)
+[Short description](#Short-description) | [Setup](#Setup) | [Syntax](#Syntax) | [Description](#Description)
 
-[Options](#Options) | [Example](#Example) | [FAQ](#FAQ) | [Auxiliary packages](#Auxiliary-packages) | [References](#References) | [Authors](#Authors)
+[Options](#Options) | [Example](#Example) | [Auxiliary packages](#Auxiliary-packages) | [References](#References) | [Authors](#Authors)
 
 ## Short description
 
 Estimates the effect of a treatment on an outcome in a heterogeneous adoption design with no stayers but some quasi stayers (see de Chaisemartin and D'Haultfoeuille (2024)).
- 
-
-## Vignettes
 
 ## Setup
 
@@ -99,8 +96,6 @@ Changing the level of the confidence interval:
 ```s
 did_had y g t d, effects(5) placebo(4) level(0.1)
 ```
-
-## FAQ
 
 ## References
 
