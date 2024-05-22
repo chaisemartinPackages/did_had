@@ -7,7 +7,7 @@ Estimation of treatment effect in heterogeneous adoption designs.
 
 ## Short description
 
-Estimates the effect of a treatment on an outcome in a heterogeneous adoption design with quasi stayers (see de Chaisemartin and D'Haultfoeuille (2024)).
+Estimates the effect of a treatment on an outcome in a heterogeneous adoption design with no stayers but some quasi stayers (see de Chaisemartin and D'Haultfoeuille (2024)).
  
 
 ## Vignettes
@@ -30,23 +30,25 @@ ssc install did_multiplegt_dyn, replace
 
 ## Description
 
-**did_had** estimates the effect of a treatment on an outcome in a heterogeneous adoption design with quasi stayers. This design
-        applies to scenarios where all groups start with a treatment level of 0 in the first period and then all groups increase
-        their treatment level in the consecutive period. As all groups change their treatment between the two periods, it is
-        impossible to make the "natural comparison" between groups that changed treatment and those that remained at 0 to estimate
-        a treatment effect. To circumvent this, did_had implements the estimator from de Chaisemartin and D'Haultfoeuille (2024)
-        which uses so called "quasi stayers" as controls. Those quasi stayers are groups that change their treatment only by a
-        small amount and are therefore regarded "as good as untreated".  The command makes use of the lprobust command by Calonico,
-        Cattaneo and Farrell (2018) to determine the bandwidth up to which groups are considered to be a quasi stayer. Then, an
-        estimator for the treatment effect can be constructed as the difference between the change in outcome of all groups and the
-        change of those quasi stayer groups, scaled by the average change in the treatment between the two periods.
-        
-The estimator also applies to scenarios with more than two periods. The general setting has to be the same (all groups
-        start with a treatment of 0 and change their treatment at the same period), but in case the data tracks more than just two
-        periods it is possible to estimate the effect of the treatment over the course of more than just one post-treatment period,
-        or in case of more than one pre-treatment period, those can be used to placebo test Assumption 2 from de Chaisemartin and
-        D'Haultfoeuille (2024) (and in case you have both multiple pre and post periods you can of course do both at the same
-        time).
+**did_had** estimates the effect of a treatment on an outcome in a heterogeneous adoption design (HAD) with no stayers but some
+        quasi stayers. HADs are designs where all groups are untreated in the first period, and then some groups receive a strictly
+        positive treatment dose at a period F, which has to be the same for all treated groups (with variation in treatment timing,
+        the did_multiplegt_dyn package may be used).  Therefore, there is variation in treatment intensity, but no variation in
+        treatment timing.  HADs without stayers are designs where all groups receive a strictly positive treatment dose at period
+        F: no group remains untreated. Then, one cannot use untreated units to recover the counterfactual outcome evolution that
+        treated groups would have experienced from before to after F, without treatment. To circumvent this, **did_had** implements the
+        estimator from de Chaisemartin and D'Haultfoeuille (2024) which uses so-called "quasi stayers" as the control group.  Quasi
+        stayers are groups that receive a "small enough" treatment dose at F to be regarded as "as good as untreated".  Therefore,
+        **did_had** can only be used if there are groups with a treatment dose "close to zero". Formally, the density of groups'
+        period-two treatment dose needs to be strictly positive at zero, something that can be assessed by plotting a kernel
+        density estimate of that density.  The command makes use of the **lprobust** command by Calonico, Cattaneo and Farrell (2019)
+        to determine an optimal bandwidth, i.e. a treatment dose below which groups can be considered as quasi stayers.  To
+        estimate the treatment's effect, the command starts by computing the difference between the change in outcome of all groups
+        and the intercept in a local linear regression of the outcome change on the treatment dose among quasi-stayers. Then, that
+        difference is scaled by groups' average treatment dose at period two. Standard errors and confidence intervals are also
+        computed leveraging **lprobust**.  We recommend that users of **did_had** cite de Chaisemartin and D'Haultfoeuille (2024),
+        Calonico, Cattaneo and Farrell (2019), and Calonico, Cattaneo and Farrell (2018).
+
 
 **Y** is the outcome variable.
 
@@ -58,26 +60,22 @@ The estimator also applies to scenarios with more than two periods. The general 
 
 ## Options
 
-**effects(#)** allows you to specify the number of effects **did_had** tries to estimate. Each effect **ℓ** referes to the outcome
-        evolution from the period right before each group gets treated to **ℓ** periods after this period (effect 1 is the
-        instantaneous effect, effect 2 is the effect of reciving the treatment for 2 periods, and so on). By default, the command
-        estimates only 1 effect and in case you specified more effects than your data allows to estimate the number of effects is
-        automatically adjusted to the maximum.
+**effects(#)** allows you to specify the number of effects **did_had** tries to estimate. Effect **ℓ** is the treatment's effect at period
+        F-1+**ℓ**, namely **ℓ** periods after adoption. By default, the command estimates only 1 effect and in case you specified more
+        effects than your data allows to estimate the number of effects is automatically adjusted to the maximum.
 
-**placebo(#)** allows you to specify the number of placebo estimates **did_had** tries to compute. Those placebos are symmetric to the
-        way the effects are constructed, with the difference that they compare the outcome evolution from the period before all
-        groups get treated to **ℓ** periods before this period when all groups were still untreated. Constructing this estimator using
-        pre-treatment periods allows to placebo-test Assumption 2 from de Chaisemartin and D'Haultfoeuille (2024).
+**placebo(#)** allows you to specify the number of placebo estimates **did_had** tries to compute. Those placebos are constructed
+        symmetrically to the estimators of the actual effects, except that the outcome evolution from F-1 to F-1+**ℓ** in the actual
+        estimator is replaced by the outcome evolution from F-1 to F-1-**ℓ** in the placebo.
 
-**level(#)** allows you to specify the level alpha for which the 1-alpha confidence intervals are valid. By default, this option is
-        set to 0.05.
+**level(#)** allows you to specify (1-the level) of the confidence intervals shown by the command. By default this level is set to
+        0.05, thus yielding 95% level confidence intervals.
+
+**kernel(string)** allows you to specify the kernel function used by **lprobust**. Possible choices are 
+        **<ins>triangular**, **<ins>epanechnikov**, **<ins>uniform** and **<ins>gaussian**.  By default, the program uses a uniform kernel.
         
-**kernel(string)** allows you to specify the kernel function used by lprobust to estimate the optimal bandwidth and mu. Possible
-        choices are **<ins>triangular**, **<ins>epanechnikov**, **<ins>uniform** and **<ins>gaussian**.  By default, the program uses a uniform kernel.
-        
-**graph_off** by default, **did_had** outputs an event-study like graph with the effect estimates and the corresponding standard
-        errors according to the numbers you specified in **effects(#)** and **placebo(#)**. When specifying **graph_off**, the production of
-        this graph will be suppressed.
+**graph_off** by default, **did_had** outputs an event-study graph with the effect and placebo estimates and their confidence intervals. When specifying **graph_off**, the
+        graph is suppressed.
 
 ## Example    
 
@@ -109,8 +107,11 @@ did_had y g t d, effects(5) placebo(4) level(0.1)
 de Chaisemartin, C, D'Haultfoeuille, X (2024). [Two-way Fixed Effects and Difference-in-Difference Estimators in Heterogeneous Adoption Designs.
 ](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4284811).
 
-Calonico, S., M. D. Cattaneo, and M. H. Farrell (2018). [On the Effect of Bias Estimation on Coverage Accuracy in NonparametricInference.
-](https://nppackages.github.io/references/Calonico-Cattaneo-Farrell_2018_JASA.pdf). Journal of Statistical Software, 91(8): 1-33. doi: [10.18637/jss.v091.i08.](https://www.jstatsoft.org/article/view/v091i08)
+Calonico, S., M. D. Cattaneo, and M. H. Farrell. 2019. [nprobust: Nonparametric Kernel-Based Estimation and Robust Bias-Corrected Inference
+](https://nppackages.github.io/references/Calonico-Cattaneo-Farrell_2019_JSS.pdf). Journal of Statistical Software, 91(8): 1-33.
+
+Calonico, S., M. D. Cattaneo, and M. H. Farrell. 2018. [On the Effect of Bias Estimation on Coverage Accuracy in NonparametricInference.
+](https://nppackages.github.io/references/Calonico-Cattaneo-Farrell_2018_JASA.pdf). Journal of the American Statistical Association 113(522): 767-779.
 
 ## Auxiliary packages
 
