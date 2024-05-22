@@ -1,9 +1,9 @@
 # did_had
 Estimation of treatment effect in heterogeneous adoption designs.
 
-[Short description](#Short-description) | [Setup](#Setup) | [Syntax](#Syntax) | [Description](#Description)
+[Short description](#Short-description) | [Setup](#Setup) | [Syntax](#Syntax) | [Description](#Description) | [Options](#Options) 
 
-[Options](#Options) | [Example](#Example) | [Auxiliary packages](#Auxiliary-packages) | [References](#References) | [Authors](#Authors)
+[Example](#Example) | [Auxiliary packages](#Auxiliary-packages) | [References](#References) | [Authors](#Authors)
 
 ## Short description
 
