@@ -189,7 +189,7 @@ Mail:
 
 {p 4 4}
 GitHub:
-{browse "https://github.com/chaisemartinPackages/did_multiplegt_dyn"}.
+{browse "https://github.com/chaisemartinPackages/did_had"}.
 {p_end}
 
 {marker saved_results}{...}
