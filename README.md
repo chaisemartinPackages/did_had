@@ -13,7 +13,7 @@ Estimates the effect of a treatment on an outcome in a heterogeneous adoption de
 
 ### Stata
 ```s
-ssc install did_multiplegt_dyn, replace
+ssc install did_had, replace
 ```
 
 ### R
