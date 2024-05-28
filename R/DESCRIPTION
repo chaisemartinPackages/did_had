@@ -1,0 +1,20 @@
+Package: DIDHAD
+Title: DID in Heterogeneous Adoption Designs
+Version: 1.0.0
+Authors@R: 
+    c(person("Diego", "Ciccia", role = c("aut", "cre"), email = "diego.ciccia@sciencespo.fr"),
+	person("Felix", "Knau", role = "aut", email = "felix.knau@sciencespo.fr"),
+	person("Doulo", "Sow", role = "aut", email = "doulo.sow@sciencespo.fr"),
+    person("Clément", "de Chaisemartin", role = "aut", email = "clement.dechaisemartin@sciencespo.fr"),
+    person("Xavier", "D'Haultfoeuille", role = "aut", email = "xavier.dhaultfoeuille@ensae.fr"))
+Maintainer: Diego Ciccia <diego.ciccia@sciencespo.fr>
+Description: Estimation of DiD estimators in Heterogeneous adoption designs (de Chaisemartin, D'Haultfoeuille & Gurgand, 2024). 
+License: MIT + file LICENSE
+Imports: MASS, YatchewTest, lpdensity, plm, rnames, stats, dplyr
+Author: Diego Ciccia [aut, cre],
+	Felix Knau [aut],
+	Doulo Sow [aut],
+  	Clément de Chaisemartin [aut],
+    Xavier D'Haultfoeuille [aut]
+Encoding: UTF-8
+RoxygenNote: 7.2.3

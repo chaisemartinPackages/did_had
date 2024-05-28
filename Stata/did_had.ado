@@ -117,7 +117,7 @@ if `placebo'!=0{
 	if `effects'<`placebo'{
 		di as error ""
 		di as error "The number of placebo requested cannot be larger than the number of effects requested."
-		di as error "The command cannot compute more than " l_placebo_XX " placebo(s)."
+		di as error "The command cannot compute more than " `effects' " placebo(s)." // Modif. Diego: changed l_placebo_XX with effects
 		
 		* adjust the number of placebos
 		local placebo=min(l_placebo_XX,`effects')
