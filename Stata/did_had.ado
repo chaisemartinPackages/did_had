@@ -338,7 +338,7 @@ gen double y_diff_2_XX=y_diff_XX^2
 ***** Compute optimal bandwidth, mu_hat and its bias using "lprobust" *****
 
 gen grid_XX=0 if _n==1
-lprobust y_diff_XX treatment_1_XX, eval(grid_XX) kernel(`kernel')
+noi lprobust y_diff_XX treatment_1_XX, eval(grid_XX) kernel(`kernel')
 scalar h_star=e(Result)[1,2] 
 scalar mu_hat_XX_alt=e(Result)[1,5] 
 scalar mu_hat_XX_alt_ub=e(Result)[1,6] 
@@ -371,7 +371,6 @@ scalar se_naive_XX=se_mu_XX/mean_treatment_XX
 
 ** CI
 local alpha=`level'
-
 scalar low_XX=ß_qs_XX-B_hat_Hg_XX-invnormal(1-(`alpha'/2))*scalar(se_naive_XX)
 scalar up_XX=ß_qs_XX-B_hat_Hg_XX+invnormal(1-(`alpha'/2))*scalar(se_naive_XX)
 

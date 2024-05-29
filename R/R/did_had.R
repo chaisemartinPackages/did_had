@@ -1,6 +1,6 @@
 #' Outer function for DIDHetAdoption package
 #' @md
-#' @description Estimation of DiD estimators in Heterogeneous adoption designs (de Chaisemartin, D'Haultfoeuille & Gurgand, 2024). 
+#' @description Estimation of DiD estimators in Heterogeneous adoption designs (de Chaisemartin and D'Haultfoeuille, 2024). 
 #' @param df A data.frame object
 #' @param outcome Outcome variable
 #' @param group Group Variable
@@ -11,7 +11,6 @@
 #' @param level level
 #' @param kernel kernel
 #' @param graph_off graph_off
-#' @param no_data no_data
 #' @examples
 #' A <- 0; print(A)
 #' @export
@@ -24,9 +23,8 @@ did_had <- function(
     effects = 1,
     placebo = 0,
     level = 5,
-    kernel = "uniform",
-    graph_off = FALSE,
-    no_data = FALSE
+    kernel = "uni",
+    graph_off = FALSE
 ) {
 
     params <- as.list(match.call())[-1]
@@ -57,14 +55,9 @@ did_had <- function(
     params <- NULL
 
     obj <- list(args)
-    results <- did_het_adoption_main(df = df, outcome = outcome, group = group, time = time, treatment = treatment, effects = effects, placebo = placebo, level = level)
-    obj <- append(obj, list(results$mat))
-    obj <- append(obj, list(results$h_scalars))
-    names(obj) <- c("args", "results", "h_scalars")
-    if (isFALSE(no_data)) {
-        obj <- append(obj, list(results$data))
-        names(obj)[length(names(obj))] <- "data"
-    }
+    results <- did_het_adoption_main(df = df, outcome = outcome, group = group, time = time, treatment = treatment, effects = effects, placebo = placebo, level = level, kernel = kernel)
+    obj <- append(obj, list(results))
+    names(obj) <- c("args", "results")
     
     class(obj) <- "did_had"
     return(obj)

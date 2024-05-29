@@ -13,9 +13,8 @@ did_had(
   effects = 1,
   placebo = 0,
   level = 5,
-  kernel = "uniform",
-  graph_off = FALSE,
-  no_data = FALSE
+  kernel = "uni",
+  graph_off = FALSE
 )
 }
 \arguments{
@@ -38,11 +37,9 @@ did_had(
 \item{kernel}{kernel}
 
 \item{graph_off}{graph_off}
-
-\item{no_data}{no_data}
 }
 \description{
-Estimation of DiD estimators in Heterogeneous adoption designs (de Chaisemartin, D'Haultfoeuille & Gurgand, 2024).
+Estimation of DiD estimators in Heterogeneous adoption designs (de Chaisemartin and D'Haultfoeuille, 2024).
 }
 \examples{
 A <- 0; print(A)
