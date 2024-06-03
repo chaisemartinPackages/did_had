@@ -100,6 +100,15 @@ thus yielding 95% level confidence intervals.
 By default, the program uses a uniform kernel.
 {p_end}
 
+{p 4 8} 
+{cmd:yatchew} yields the result from a non-parametric test 
+that the condtitional expectation of Y_{F_g-1+l} - Y_{F_g} given D_t 
+is linear (Yatchew, 1997), as in Section 3 of de Chaisemartin and D'Haultfoeuille (2024). 
+The test is performed for all the dynamic effects and placebo 
+computed by {cmd:did_had}. This option requires the {cmd:yatchew_test} 
+package, which is currently available on SSC.
+{p_end}
+
 {p 4 8}
 {cmd:graph_off:} by default, {cmd:did_had} outputs an event-study graph with the effect and placebo estimates and their confidence intervals. 
 When specifying {cmd:graph_off}, the graph is suppressed.
