@@ -4,7 +4,7 @@ capture program drop did_had
 
 program did_had, eclass
 	version 12.0
-	syntax varlist(min=4 max=4 numeric) [if] [in] [, effects(integer 1) placebo(integer 0) level(real 0.05) kernel(string) graph_off]
+	syntax varlist(min=4 max=4 numeric) [if] [in] [, effects(integer 1) placebo(integer 0) level(real 0.05) kernel(string) graph_off yatchew]
 	
 ****The path of the initial dataset
 local dataset_name_XX `c(filename)'
@@ -22,6 +22,17 @@ if _rc{
 	di ""
 	
 	exit
+}
+
+if "`yatchew'" != "" {
+qui cap which yatchew_test
+	if _rc {
+		di ""
+		di as error "You have not installed the yatchew_test command which is used within the did_had command with the yatchew option."
+		di `"{stata "ssc install yatchew_test replace": Click here to install yatchew_test}"'
+		di ""
+		exit
+	}
 }
 	
 qui{
@@ -139,13 +150,20 @@ forvalues i=1/`placebo'{
 mat res_XX=J(`effects'+`placebo',8,.)
 local rownames ""
 
+if "`yatchew'" != "" {
+	mat y_res_XX = J(`effects'+`placebo',5, .)
+	local sigma = ustrunescape("\u03c3")
+	local squared = ustrunescape("\u00b2")
+    matrix colnames y_res_XX = "`sigma'`squared'_lin" "`sigma'`squared'_diff" "T_hr" "p-value" "N"
+}
+
 *** call the estimation program inside loops over the number of effects/placebos
 if `placebo'!=0{
 forvalue i=1/`placebo'{
 	cap drop placebo_`i'
 	gen placebo_`i'=outcome_XX-outcome_XX[_n+`i'] if group_XX==group_XX[_n+`i'] & F_g_XX_int[_n+`i'+1]==1
 	
-	did_had_est placebo_`i' group_XX treatment_XX if placebo_`i'!=., level(`level') kernel(`kernel')
+	did_had_est placebo_`i' group_XX treatment_XX if placebo_`i'!=., level(`level') kernel(`kernel') `yatchew'
 	matrix res_XX[`i',1]=scalar(ß_qs_XX)
 	matrix res_XX[`i',2]=scalar(se_naive_XX)
 	matrix res_XX[`i',3]=scalar(low_XX)
@@ -154,6 +172,12 @@ forvalue i=1/`placebo'{
 	matrix res_XX[`i',6]=scalar(h_star)
 	matrix res_XX[`i',7]=scalar(within_bw_XX)
 	matrix res_XX[`i',8]=-`i'
+
+	if "`yatchew'" != "" {
+		forv j = 1/5 {
+			mat y_res_XX[`i', `j'] = yat_res[1, `j']
+		}
+	}
 	
 	local rownames "`rownames' Placebo_`i'"
 	
@@ -176,7 +200,7 @@ forvalue i=1/`effects'{
 	cap drop effect_`i'
 	gen effect_`i'=outcome_XX-outcome_XX[_n-`i'] if group_XX==group_XX[_n-`i'] & F_g_XX_int[_n-`i'+1]==1
 
-	did_had_est effect_`i' group_XX treatment_XX if effect_`i'!=., level(`level') kernel(`kernel')
+	did_had_est effect_`i' group_XX treatment_XX if effect_`i'!=., level(`level') kernel(`kernel') `yatchew'
 	matrix res_XX[`placebo'+`i',1]=scalar(ß_qs_XX)
 	matrix res_XX[`placebo'+`i',2]=scalar(se_naive_XX)
 	matrix res_XX[`placebo'+`i',3]=scalar(low_XX)
@@ -187,10 +211,19 @@ forvalue i=1/`effects'{
 	matrix res_XX[`placebo'+`i',8]=`i'
 	
 	local rownames "`rownames' Effect_`i'"
+
+	if "`yatchew'" != "" {
+		forv j = 1/5 {
+			mat y_res_XX[`placebo'+`i', `j'] = yat_res[1, `j']
+		}
+	}
 }
 
 matrix colnames res_XX = "Estimate" "SE" "LB CI" "UB CI" "N" "BW" "N in BW"
 matrix rownames res_XX = `rownames'
+if "`yatchew'" != "" {
+	matrix rownames y_res_XX = `rownames'
+}
 
 } // end qui
 
@@ -212,11 +245,30 @@ matlist res_XX[1..`placebo',1..7]
 di as input "{hline 90}"
 }
 
+if "`yatchew'" != "" {
+* Only shown when yatchew_test is requested
+display _newline
+di as input "{hline 70}"
+di as input _skip(15) "Heteroskedasticity-robust Yatchew-Test"
+di as input "{hline 70}"
+matlist y_res_XX[`placebo'+1...,1..5]
+if `placebo' != 0 {
+	matlist y_res_XX[1..`placebo',1..5]
+}
+di as input "{hline 70}"
+
+}
+
 qui{
 
 *** Adapt matrix for Graph
 mata: res_new_XX=st_matrix("res_XX")
-mata: res_graph_XX=res_new_XX[range(`placebo',1,1),.] \ J(1,8,0) \ res_new_XX[(`placebo'+1::`placebo'+`effects'),]
+if `placebo' != 0 {
+	mata: res_graph_XX=res_new_XX[range(`placebo',1,1),.] \ J(1,8,0) \ res_new_XX[(`placebo'+1::`placebo'+`effects'),]
+}
+else {
+	mata: res_graph_XX= J(1,8,0) \ res_new_XX[(`placebo'+1::`placebo'+`effects'),]
+}
 mata: st_matrix("mat_graph_XX", res_graph_XX)
 
 
@@ -245,6 +297,14 @@ ereturn post b V
 
 * other ereturns 
 ereturn matrix estimates=res_XX
+
+if "`yatchew'" != "" {
+	mat fy_res_XX =  y_res_XX[`placebo'+1...,1..5]
+	if `placebo' != 0 {
+		mat fy_res_XX = (fy_res_XX\y_res_XX[1..`placebo',1..5])
+	}
+	ereturn matrix yatchew_res = fy_res_XX
+}
 	
 //>>
 restore	
@@ -278,7 +338,7 @@ capture program drop did_had_est
 	
 program did_had_est, eclass
 version 12.0
-syntax varlist(min=3 max=3 numeric) [if] [in] [, level(real 0.05) kernel(string)]	
+syntax varlist(min=3 max=3 numeric) [if] [in] [, level(real 0.05) kernel(string) yatchew]	
 
 qui{
 	
@@ -377,6 +437,12 @@ scalar up_XX=ß_qs_XX-B_hat_Hg_XX+invnormal(1-(`alpha'/2))*scalar(se_naive_XX)
 *** Count number of groups within the bandwidth
 count if (treatment_1_XX<=scalar(h_star))
 scalar within_bw_XX=r(N)
+
+
+if "`yatchew'" != "" {
+	noi yatchew_test y_diff_XX treatment_1_XX, het_robust
+	mat yat_res = r(results)
+}
 
 restore
 
