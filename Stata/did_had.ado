@@ -249,7 +249,7 @@ if "`yatchew'" != "" {
 * Only shown when yatchew_test is requested
 display _newline
 di as input "{hline 70}"
-di as input _skip(15) "Heteroskedasticity-robust Yatchew-Test"
+di as input _skip(15) "Heteroskedasticity-robust Yatchew Test"
 di as input "{hline 70}"
 matlist y_res_XX[`placebo'+1...,1..5]
 if `placebo' != 0 {
