@@ -23,6 +23,7 @@ with no stayers but some quasi stayers (see de Chaisemartin and D'Haultfoeuille 
 {cmd:placebo(#)}
 {cmd:level(#)}
 {cmd:kernel(string)}
+{cmd:yatchew}
 {cmd:graph_off}]
 {p_end}
 
@@ -102,9 +103,11 @@ By default, the program uses a uniform kernel.
 
 {p 4 8} 
 {cmd:yatchew} yields the result from a non-parametric test 
-that the condtitional expectation of Y_{F_g-1+l} - Y_{F_g} given D_t 
-is linear (Yatchew, 1997), as in Section 3 of de Chaisemartin and D'Haultfoeuille (2024). 
-The test is performed for all the dynamic effects and placebo 
+that the conditional expectation of the F-1 to F-1+{cmd:ℓ} outcome evolution
+given the treatment at F-1+{cmd:ℓ} is linear (Yatchew, 1997). 
+This test is implemented using the heteroskedasticity-robust 
+test statistic proposed in Section 3 of de Chaisemartin and D'Haultfoeuille (2024) 
+and it is performed for all the dynamic effects and placebos 
 computed by {cmd:did_had}. This option requires the {cmd:yatchew_test} 
 package, which is currently available on SSC.
 {p_end}
@@ -113,7 +116,6 @@ package, which is currently available on SSC.
 {cmd:graph_off:} by default, {cmd:did_had} outputs an event-study graph with the effect and placebo estimates and their confidence intervals. 
 When specifying {cmd:graph_off}, the graph is suppressed.
 {p_end}
-
 
 {marker Example}{...}
 {title:Example}{cmd:: Artificial data from the GitHub page} 

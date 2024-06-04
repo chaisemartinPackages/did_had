@@ -5,10 +5,11 @@
 #' @param D Treatment variable
 #' @param level level
 #' @param kernel kernel
+#' @param yatchew yatchew
 #' @importFrom stats lm qnorm as.formula
 #' @importFrom nprobust lprobust
 #' @import dplyr
-#' @import lpdensity
+#' @import YatchewTest
 #' @noRd
 did_had_est <- function(
     df,
@@ -16,7 +17,8 @@ did_had_est <- function(
     group_XX, 
     D_XX,
     level,
-    kernel
+    kernel,
+    yatchew
 ) {
 
     df$Y_diff_XX <- df[[Y_XX]]
@@ -49,6 +51,10 @@ did_had_est <- function(
     df$count <- as.numeric(df$D_XX <= ret$h_star)
     ret$within_bw_XX <- sum(df$count, na.rm = TRUE)
     df$count <- NULL
+
+    if (isTRUE(yatchew)) {
+        ret$yt_res <- yatchew_test(data = df, Y = "Y_diff_XX", D = "D_XX", het_robust = TRUE)$results
+    }
 
     return(ret)
 }
