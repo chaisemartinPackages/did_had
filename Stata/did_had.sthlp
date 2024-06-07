@@ -23,6 +23,7 @@ with no stayers but some quasi stayers (see de Chaisemartin and D'Haultfoeuille 
 {cmd:placebo(#)}
 {cmd:level(#)}
 {cmd:kernel(string)}
+{cmd:yatchew}
 {cmd:graph_off}]
 {p_end}
 
@@ -100,11 +101,21 @@ thus yielding 95% level confidence intervals.
 By default, the program uses a uniform kernel.
 {p_end}
 
+{p 4 8} 
+{cmd:yatchew} yields the result from a non-parametric test 
+that the conditional expectation of the F-1 to F-1+{cmd:ℓ} outcome evolution
+given the treatment at F-1+{cmd:ℓ} is linear (Yatchew, 1997). 
+This test is implemented using the heteroskedasticity-robust 
+test statistic proposed in Section 3 of de Chaisemartin and D'Haultfoeuille (2024) 
+and it is performed for all the dynamic effects and placebos 
+computed by {cmd:did_had}. This option requires the {cmd:yatchew_test} 
+package, which is currently available on SSC.
+{p_end}
+
 {p 4 8}
 {cmd:graph_off:} by default, {cmd:did_had} outputs an event-study graph with the effect and placebo estimates and their confidence intervals. 
 When specifying {cmd:graph_off}, the graph is suppressed.
 {p_end}
-
 
 {marker Example}{...}
 {title:Example}{cmd:: Artificial data from the GitHub page} 
@@ -154,6 +165,12 @@ Journal of Statistical Software, 91(8): 1-33.
  Calonico, S., M. D. Cattaneo, and M. H. Farrell. 2018.
 {browse "https://nppackages.github.io/references/Calonico-Cattaneo-Farrell_2018_JASA.pdf":On the Effect of Bias Estimation on Coverage Accuracy in Nonparametric Inference}. 
 Journal of the American Statistical Association 113(522): 767-779.
+{p_end}
+
+{p 4 4}
+Yatchew, A (1997).
+{browse "https://doi.org/10.1016/S0165-1765(97)00218-8":An elementary estimator of the partial linear model}.
+Economics Letters, Elsevier, vol. 62(3), pages 271-278.
 {p_end}
 
 {title:Auxiliary packages}
