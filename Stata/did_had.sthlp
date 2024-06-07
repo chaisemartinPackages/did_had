@@ -167,6 +167,12 @@ Journal of Statistical Software, 91(8): 1-33.
 Journal of the American Statistical Association 113(522): 767-779.
 {p_end}
 
+{p 4 4}
+Yatchew, A (1997).
+{browse "https://doi.org/10.1016/S0165-1765(97)00218-8":An elementary estimator of the partial linear model}.
+Economics Letters, Elsevier, vol. 62(3), pages 271-278.
+{p_end}
+
 {title:Auxiliary packages}
 
 {p 4 4}
