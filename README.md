@@ -110,7 +110,6 @@ Calonico, S., M. D. Cattaneo, and M. H. Farrell. 2018. [On the Effect of Bias Es
 ](https://nppackages.github.io/references/Calonico-Cattaneo-Farrell_2018_JASA.pdf). Journal of the American Statistical Association 113(522): 767-779.
 
 Yatchew, A (1997). [An elementary estimator of the partial linear model](https://doi.org/10.1016/S0165-1765(97)00218-8). Economics Letters, Elsevier, vol. 62(3), pages 271-278
-{p_end}
 
 ## Auxiliary packages
 
