@@ -21,7 +21,7 @@ ssc install did_had, replace
 ## Syntax
 
 ### Stata
-**did_had Y G T D** [*if*] [*in*] [, **effects(#) placebo(#) level(#) kernel(string) graph_off**]
+**did_had Y G T D** [*if*] [*in*] [, **effects(#) placebo(#) level(#) kernel(string) yatchew graph_off**]
 
 ### R
 
@@ -70,9 +70,10 @@ ssc install did_had, replace
 
 **kernel(string)** allows you to specify the kernel function used by **lprobust**. Possible choices are 
         **<ins>triangular**, **<ins>epanechnikov**, **<ins>uniform** and **<ins>gaussian**.  By default, the program uses a uniform kernel.
+
+**yatchew** yields the result from a non-parametric test that the conditional expectation of the $F-1$ to $F-1+\ell$ outcome evolution given the treatment at $F-1+\ell$ is linear (Yatchew, 1997). This test is implemented using the heteroskedasticity-robust test statistic proposed in Section 3 of de Chaisemartin and D'Haultfoeuille (2024) and it is performed for all the dynamic effects and placebos computed by **did_had**. This option requires the **yatchew_test** package, which is currently available on SSC.
         
-**graph_off** by default, **did_had** outputs an event-study graph with the effect and placebo estimates and their confidence intervals. When specifying **graph_off**, the
-        graph is suppressed.
+**graph_off** by default, **did_had** outputs an event-study graph with the effect and placebo estimates and their confidence intervals. When specifying **graph_off**, the graph is suppressed.
 
 ## Example    
 
