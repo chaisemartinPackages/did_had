@@ -1,5 +1,5 @@
 Package: DIDHAD
-Title: DID in Heterogeneous Adoption Designs With Quasi Stayers 
+Title: DID in Heterogeneous Adoption Designs with Quasi Stayers 
 Version: 1.0.0
 Authors@R: 
     c(person("Diego", "Ciccia", role = c("aut", "cre"), email = "diego.ciccia@sciencespo.fr"),
