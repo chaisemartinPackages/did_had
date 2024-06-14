@@ -112,6 +112,18 @@ computed by {cmd:did_had}. This option requires the {cmd:yatchew_test}
 package, which is currently available on SSC.
 {p_end}
 
+{p 8 8}
+{bf:Interpreting the results from {cmd:yatchew}.} Following Theorem 1 and Equation 5 
+of de Chaisemartin and D'Haultfoeuille (2024), in designs where there are stayers or 
+quasi-stayers, the coefficient from a TWFE regression of Y on D in time periods F-1 
+and F-1+{cmd:ℓ} is unbiased for the Average Slope of Treated groups (AST) if and only if 
+the conditional expectation of the outcome evolution from F-1 to F-1+{cmd:ℓ} 
+given the treatment at F-1+{cmd:ℓ} is linear. As a result, if the test statistics are not statistically 
+significant, i.e. the linearity hypothesis cannot be rejected, then one can unbiasedly estimate the
+F-1-to-F-1+{cmd:ℓ} AST using a 
+TWFE regression as the one described above.
+{p_end}
+
 {p 4 8}
 {cmd:graph_off:} by default, {cmd:did_had} outputs an event-study graph with the effect and placebo estimates and their confidence intervals. 
 When specifying {cmd:graph_off}, the graph is suppressed.

@@ -112,7 +112,7 @@ did_het_adoption_main <- function(
     if (placebo != 0) {
         for (i in 1:placebo) {
             df[[paste0("Placebo_", i)]] <- ifelse(df$F_g_int_XX == 1, lag(df$Y_XX, i+1) - lag(df$Y_XX, 1), NA)
-            res <- did_had_est(df = df, Y_XX = paste0("Placebo_", i), D_XX = "D_XX", group_XX = "group_XX", level = level, kernel = kernel, yatchew = yatchew)
+            res <- did_had_est(df = df, Y_XX = paste0("Placebo_", i), D_XX = "D_XX", group_XX = "group_XX", level = level, kernel = kernel, yatchew = yatchew, placebo = TRUE)
             resmat[effects+i, 1] <- res$beta_qs_XX
             resmat[effects+i, 2] <- res$se_naive_XX
             resmat[effects+i, 3] <- res$low_XX

@@ -2,7 +2,7 @@
 % Please edit documentation in R/did_had.R
 \name{did_had}
 \alias{did_had}
-\title{Outer function for DIDHetAdoption package}
+\title{Main function of the DIDHAD package}
 \usage{
 did_had(
   df,
@@ -12,7 +12,7 @@ did_had(
   treatment,
   effects = 1,
   placebo = 0,
-  level = 5,
+  level = 0.05,
   kernel = "uni",
   yatchew = FALSE,
   graph_off = FALSE
@@ -51,6 +51,11 @@ Estimates the effect of a treatment on an outcome in a heterogeneous adoption de
 To circumvent this, \code{did_had()} implements the estimator from de Chaisemartin and D'Haultfoeuille (2024) which uses so-called "quasi stayers" as the control group. Quasi stayers are groups that receive a "small enough" treatment dose at F to be regarded as "as good as untreated". Therefore, \code{did_had()} can only be used if there are groups with a treatment dose "close to zero". Formally, the density of groups' period-two treatment dose needs to be strictly positive at zero, something that can be assessed by plotting a kernel density estimate of that density.
 
 The command makes use of the \code{lprobust()} command by Calonico, Cattaneo and Farrell (2019) to determine an optimal bandwidth, i.e. a treatment dose below which groups can be considered as quasi stayers. To estimate the treatment's effect, the command starts by computing the difference between the change in outcome of all groups and the intercept in a local linear regression of the outcome change on the treatment dose among quasi-stayers. Then, that difference is scaled by groups' average treatment dose at period two. Standard errors and confidence intervals are also computed leveraging \code{lprobust()}. We recommend that users of {cmd:did_had} cite de Chaisemartin and D'Haultfoeuille (2024), Calonico, Cattaneo and Farrell (2019), and Calonico, Cattaneo and Farrell (2018).
+}
+
+\section{Interpreting the results from the \code{yatchew} option}{
+
+Following Theorem 1 and Equation 5 of de Chaisemartin and D'Haultfoeuille (2024), in designs where there are stayers or quasi-stayers, the coefficient from a TWFE regression of Y on D in time periods \eqn{F-1} and \eqn{F-1+\ell} is unbiased for the Average Slope of Treated groups (AST) if and only if the conditional expectation of the outcome evolution from \eqn{F-1} to \eqn{F-1+\ell} given the treatment at \eqn{F-1+\ell} is linear. As a result, if the test statistics are not statistically significant, i.e. the linearity hypothesis cannot be rejected, then one can unbiasedly estimate the \eqn{F-1}-to-\eqn{F-1+\ell} AST using a TWFE regression as the one described above.
 }
 
 \section{Contacts}{

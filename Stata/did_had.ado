@@ -163,7 +163,7 @@ forvalue i=1/`placebo'{
 	cap drop placebo_`i'
 	gen placebo_`i'=outcome_XX-outcome_XX[_n+`i'] if group_XX==group_XX[_n+`i'] & F_g_XX_int[_n+`i'+1]==1
 	
-	did_had_est placebo_`i' group_XX treatment_XX if placebo_`i'!=., level(`level') kernel(`kernel') `yatchew'
+	did_had_est placebo_`i' group_XX treatment_XX if placebo_`i'!=., level(`level') kernel(`kernel') `yatchew' placebo
 	matrix res_XX[`i',1]=scalar(ß_qs_XX)
 	matrix res_XX[`i',2]=scalar(se_naive_XX)
 	matrix res_XX[`i',3]=scalar(low_XX)
@@ -338,7 +338,7 @@ capture program drop did_had_est
 	
 program did_had_est, eclass
 version 12.0
-syntax varlist(min=3 max=3 numeric) [if] [in] [, level(real 0.05) kernel(string) yatchew]	
+syntax varlist(min=3 max=3 numeric) [if] [in] [, level(real 0.05) kernel(string) yatchew placebo]	
 
 qui{
 	
@@ -440,7 +440,12 @@ scalar within_bw_XX=r(N)
 
 
 if "`yatchew'" != "" {
-	noi yatchew_test y_diff_XX treatment_1_XX, het_robust
+	local ordn = "`placebo'" == ""
+	cap yatchew_test y_diff_XX treatment_1_XX, het_robust order(`ordn')
+	if _rc != 0 {
+		ssc install yatchew_test, replace
+		yatchew_test y_diff_XX treatment_1_XX, het_robust order(`ordn')
+	}
 	mat yat_res = r(results)
 }
 

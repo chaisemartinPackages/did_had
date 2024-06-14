@@ -73,7 +73,7 @@ print.did_had <- function(x, ...) {
         }
     }
 
-    cat("\nThe development of this package was funded by the European Union (ERC, REALLYCREDIBLE,GA N°101043899).\n")
+    cat("\nThe development of this package was funded by the European Union (ERC, REALLYCREDIBLE,GA N. 101043899).\n")
 }
 
 #' summary method for did_had

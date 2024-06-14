@@ -6,6 +6,7 @@
 #' @param level level
 #' @param kernel kernel
 #' @param yatchew yatchew
+#' @param placebo placebo
 #' @importFrom stats lm qnorm as.formula
 #' @importFrom nprobust lprobust
 #' @import dplyr
@@ -18,7 +19,8 @@ did_had_est <- function(
     D_XX,
     level,
     kernel,
-    yatchew
+    yatchew,
+    placebo = FALSE
 ) {
 
     df$Y_diff_XX <- df[[Y_XX]]
@@ -45,7 +47,7 @@ did_had_est <- function(
     ret$beta_qs_XX <- (mean_Y_diff_XX - mu_hat_XX_alt) / mean_D_XX
     B_hat_Hg_XX <- M_hat_hG_XX/mean_D_XX
     ret$se_naive_XX <- se_mu_XX/mean_D_XX
-    alpha <- 1 - (level/100)/2
+    alpha <- 1 - (level)/2
     ret$low_XX <- ret$beta_qs_XX - B_hat_Hg_XX - qnorm(alpha) * ret$se_naive_XX
     ret$up_XX <- ret$beta_qs_XX - B_hat_Hg_XX + qnorm(alpha) * ret$se_naive_XX
     df$count <- as.numeric(df$D_XX <= ret$h_star)
@@ -53,7 +55,7 @@ did_had_est <- function(
     df$count <- NULL
 
     if (isTRUE(yatchew)) {
-        ret$yt_res <- yatchew_test(data = df, Y = "Y_diff_XX", D = "D_XX", het_robust = TRUE)$results
+        ret$yt_res <- yatchew_test(data = df, Y = "Y_diff_XX", D = "D_XX", het_robust = TRUE, order = 1-as.numeric(placebo))$results
     }
 
     return(ret)

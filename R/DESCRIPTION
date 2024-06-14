@@ -10,7 +10,7 @@ Authors@R:
 Maintainer: Diego Ciccia <diego.ciccia@sciencespo.fr>
 Description: Estimation of DiD estimators in Heterogeneous adoption designs with no stayers but with quasi stayers (de Chaisemartin and D'Haultfoeuille, 2024). 
 License: MIT + file LICENSE
-Imports: MASS, YatchewTest, nprobust, ggplot2, plm, rnames, stats, dplyr, haven, rlang
+Imports: MASS, YatchewTest (>= 1.1.0), nprobust, ggplot2, plm, rnames, stats, dplyr, haven, rlang
 Author: Diego Ciccia [aut, cre],
 	Felix Knau [aut],
 	Doulo Sow [aut],
