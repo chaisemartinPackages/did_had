@@ -2,6 +2,7 @@
 #' @param obj A did_had obj$results object
 #' @import dplyr
 #' @import ggplot2
+#' @returns A ggplot object with the event study graph.
 #' @noRd
 
 did_had_graph <- function(obj) {

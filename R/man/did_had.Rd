@@ -41,8 +41,11 @@ did_had(
 
 \item{graph_off}{(logical) by default, \code{did_had()} outputs an event-study graph with the effect and placebo estimates and their confidence intervals. When specifying \code{graph_off = TRUE}, the graph is suppressed.}
 }
+\value{
+An list object of did_had class. The object contains the estimation results, as well as the selected arguments of the function and a ggplot graph with the event study estimates.
+}
 \description{
-Estimates the effect of a treatment on an outcome in a heterogeneous adoption design with no stayers but some quasi stayers (de Chaisemartin and D'Haultfoeuille, 2024).
+Estimation of the effect of a treatment on an outcome in a heterogeneous adoption design with no stayers but some quasi stayers (de Chaisemartin and D'Haultfoeuille, 2024).
 }
 \section{Overview}{
 

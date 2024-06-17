@@ -11,6 +11,7 @@
 #' @importFrom nprobust lprobust
 #' @import dplyr
 #' @import YatchewTest
+#' @returns Dynamic estimation results (with two periods).
 #' @noRd
 did_had_est <- function(
     df,
