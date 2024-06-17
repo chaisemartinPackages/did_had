@@ -1,7 +1,7 @@
 #' Main function of the DIDHAD package
 #' @importFrom haven read_dta
 #' @md
-#' @description Estimates the effect of a treatment on an outcome in a heterogeneous adoption design with no stayers but some quasi stayers (de Chaisemartin and D'Haultfoeuille, 2024).
+#' @description Estimation of the effect of a treatment on an outcome in a heterogeneous adoption design with no stayers but some quasi stayers (de Chaisemartin and D'Haultfoeuille, 2024).
 #' @param df (data.frame) A data.frame object
 #' @param outcome (character) Outcome variable
 #' @param group (character) Group Variable
@@ -56,6 +56,7 @@
 #'                 placebo = 4,
 #'                 kernel = "tri",
 #'                 graph_off = TRUE))
+#' @returns An list object of did_had class. The object contains the estimation results, as well as the selected arguments of the function and a ggplot graph with the event study estimates.
 #' @export
 did_had <- function(
     df,

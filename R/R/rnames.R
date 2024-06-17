@@ -3,6 +3,7 @@
 #' @param obj obj
 #' @param ... Undefined
 #' @import rnames
+#' @returns The sub-list map of a did_had object.
 #' @export
 #' @noRd
 rnames.did_had <- function(obj, ...) {

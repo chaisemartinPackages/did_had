@@ -2,6 +2,7 @@
 #' @name print.did_had
 #' @param x x
 #' @param ... Undefined
+#' @returns No return, custom print method for did_had objects.
 #' @export
 #' @noRd
 print.did_had <- function(x, ...) {
@@ -80,6 +81,7 @@ print.did_had <- function(x, ...) {
 #' @name summary.did_had
 #' @param object obj
 #' @param ... Undefined
+#' @returns No return, custom summary method for did_had objects.
 #' @export
 #' @noRd
 summary.did_had <- function(object, ...) {

@@ -11,6 +11,7 @@
 #' @importFrom stats lm qnorm as.formula sd
 #' @importFrom rlang :=
 #' @import dplyr
+#' @returns Main estimation results.
 #' @noRd
 did_het_adoption_main <- function(
     df,
