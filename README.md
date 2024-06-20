@@ -17,6 +17,9 @@ ssc install did_had, replace
 ```
 
 ### R
+```
+install.packages("DIDHAD")
+```
 
 ## Syntax
 
