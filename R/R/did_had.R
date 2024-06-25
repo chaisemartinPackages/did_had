@@ -12,6 +12,8 @@
 #' @param level (positive numeric) allows you to specify (1-the level) of the confidence intervals shown by the command. By default this level is set to 0.05, thus yielding 95% level confidence intervals.
 #' @param kernel (character in "tri", "epa", "uni" or "gau") allows you to specify the kernel function used by \code{lprobust()}. Possible choices are triangular, epanechnikov, uniform and gaussian. By default, the program uses a uniform kernel.
 #' @param yatchew (logical) yatchew yields the result from a non-parametric test that the conditional expectation of the \eqn{F-1} to \eqn{F-1+\ell} outcome evolution given the treatment at \eqn{F-1+\ell} is linear (Yatchew, 1997). This test is implemented using the heteroskedasticity-robust test statistic proposed in Section 3 of de Chaisemartin and D'Haultfoeuille (2024) and it is performed for all the dynamic effects and placebos computed by \code{did_had}. This option requires the YatchewTest package, which is currently available on CRAN.
+#' @param dynamic dynamic
+#' @param trends_lin trends_lin
 #' @param graph_off (logical) by default, \code{did_had()} outputs an event-study graph with the effect and placebo estimates and their confidence intervals. When specifying \code{graph_off = TRUE}, the graph is suppressed.
 #' @section Overview:
 #' \code{did_had()} estimates the effect of a treatment on an outcome in a heterogeneous adoption design (HAD) with no stayers but some quasi stayers. HADs are designs where all groups are untreated in the first period, and then some groups receive a strictly positive treatment dose at a period \eqn{F}, which has to be the same for all treated groups (with variation in treatment timing, the \code{did_multiplegt_dyn()} package may be used). Therefore, there is variation in treatment intensity, but no variation in treatment timing. HADs without stayers are designs where all groups receive a strictly positive treatment dose at period \eqn{F}: no group remains untreated. Then, one cannot use untreated units to recover the counterfactual outcome evolution that treated groups would have experienced from before to after \eqn{F}, without treatment. 
@@ -69,6 +71,8 @@ did_had <- function(
     level = 0.05,
     kernel = "uni",
     yatchew = FALSE,
+    trends_lin = FALSE,
+    dynamic = FALSE,
     graph_off = FALSE
 ) {
 
@@ -101,7 +105,8 @@ did_had <- function(
 
     obj <- list(args)
     results <- did_het_adoption_main(df = df, outcome = outcome, group = group, time = time, 
-        treatment = treatment, effects = effects, placebo = placebo, level = level, kernel = kernel, yatchew = yatchew)
+        treatment = treatment, effects = effects, placebo = placebo, level = level, kernel = kernel, 
+        yatchew = yatchew, trends_lin = trends_lin, dynamic = dynamic)
     obj <- append(obj, list(results))
     obj <- append(obj, list(did_had_graph(results)))
     names(obj) <- c("args", "results", "plot")

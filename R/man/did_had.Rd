@@ -15,6 +15,8 @@ did_had(
   level = 0.05,
   kernel = "uni",
   yatchew = FALSE,
+  trends_lin = FALSE,
+  dynamic = FALSE,
   graph_off = FALSE
 )
 }
@@ -38,6 +40,10 @@ did_had(
 \item{kernel}{(character in "tri", "epa", "uni" or "gau") allows you to specify the kernel function used by \code{lprobust()}. Possible choices are triangular, epanechnikov, uniform and gaussian. By default, the program uses a uniform kernel.}
 
 \item{yatchew}{(logical) yatchew yields the result from a non-parametric test that the conditional expectation of the \eqn{F-1} to \eqn{F-1+\ell} outcome evolution given the treatment at \eqn{F-1+\ell} is linear (Yatchew, 1997). This test is implemented using the heteroskedasticity-robust test statistic proposed in Section 3 of de Chaisemartin and D'Haultfoeuille (2024) and it is performed for all the dynamic effects and placebos computed by \code{did_had}. This option requires the YatchewTest package, which is currently available on CRAN.}
+
+\item{trends_lin}{trends_lin}
+
+\item{dynamic}{dynamic}
 
 \item{graph_off}{(logical) by default, \code{did_had()} outputs an event-study graph with the effect and placebo estimates and their confidence intervals. When specifying \code{graph_off = TRUE}, the graph is suppressed.}
 }
