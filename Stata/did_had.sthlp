@@ -23,6 +23,8 @@ with no stayers but some quasi stayers (see de Chaisemartin and D'Haultfoeuille 
 {cmd:placebo(#)}
 {cmd:level(#)}
 {cmd:kernel(string)}
+{cmd:dynamic}
+{cmd:trends_lin}
 {cmd:yatchew}
 {cmd:graph_off}]
 {p_end}
@@ -79,9 +81,10 @@ Calonico, Cattaneo and Farrell (2018).
 {title:Options}
 
 {p 4 8}
-{cmd:effects(}{it:#}{cmd:)} allows you to specify the number of effects {cmd:did_had} tries to estimate. Effect {cmd:ℓ} is the treatment's effect
-at period F-1+{cmd:ℓ}, namely {cmd:ℓ} periods after adoption. By default, the command estimates only 1 effect and
-in case you specified more effects than your data allows to estimate the number of effects is automatically adjusted to the maximum. 
+{cmd:effects(}{it:#}{cmd:)} allows you to specify the number of effects {cmd:did_had} tries to estimate. 
+Effect {cmd:ℓ} is the treatment's effect at period F-1+{cmd:ℓ}, namely {cmd:ℓ} periods after adoption. 
+By default, the command estimates only 1 effect and in case you specified more effects than your data allows to
+estimate the number of effects is automatically adjusted to the maximum. 
 {p_end}
 
 {p 4 8}
@@ -102,26 +105,45 @@ By default, the program uses a uniform kernel.
 {p_end}
 
 {p 4 8} 
+{cmd:dynamic}: when this option is specified, effect {cmd:ℓ} is scaled by groups' average total treatment dose received from period F to F-1+{cmd:ℓ}.
+Without this option, effect {cmd:ℓ} is scaled by groups' average treatment dose at period F-1+{cmd:ℓ}.
+The latter normalization is appropriate if one assumes that groups' outcome at F-1+{cmd:ℓ} is only affected by their current treatment (static model).
+On the other hand, the former normalization is appropriate if one assumes that groups' outcome at F-1+{cmd:ℓ} can be affected by their current
+and past treatments (dynamic model).
+{p_end}
+
+{p 4 8} 
+{cmd:trends_lin}: when this option is specified, the command allows for group-specific linear trends.
+This is done by using groups' outcome evolution from period F-2 to F-1 as an estimator of each group-specific linear trend, 
+and then subtracting this trend from groups' actual outcome evolutions. 
+Note: due to the fitting of the linear trend in periods F-2 to F-1, the number of feasible placebo estimates is reduced by 1 with this option.
+{p_end}
+
+{p 4 8} 
 {cmd:yatchew} yields the result from a non-parametric test 
 that the conditional expectation of the F-1 to F-1+{cmd:ℓ} outcome evolution
-given the treatment at F-1+{cmd:ℓ} is linear (Yatchew, 1997). 
-This test is implemented using the heteroskedasticity-robust 
-test statistic proposed in Section 3 of de Chaisemartin and D'Haultfoeuille (2024) 
-and it is performed for all the dynamic effects and placebos 
-computed by {cmd:did_had}. This option requires the {cmd:yatchew_test} 
+given the treatment at F-1+{cmd:ℓ} is linear. 
+This test is implemented using an heteroskedasticity-robust version of the test of Yatchew (1997),
+proposed in Section 3 of de Chaisemartin and D'Haultfoeuille (2024). 
+It is performed for all the dynamic effects
+computed by {cmd:did_had}. It is also performed for the placebo estimators computed by the command.
+There, the null being tested is that groups' F-1 to F-1-{cmd:ℓ} outcome evolution is mean independent of their
+F-1+{cmd:ℓ} treatment, a non-parametric version of a standard pre-trends test where the F-1 to F-1-{cmd:ℓ} outcome evolution is regressed on groups'
+F-1+{cmd:ℓ} treatment. This option requires the {cmd:yatchew_test} 
 package, which is currently available on SSC.
 {p_end}
 
 {p 8 8}
 {bf:Interpreting the results from {cmd:yatchew}.} Following Theorem 1 and Equation 5 
 of de Chaisemartin and D'Haultfoeuille (2024), in designs where there are stayers or 
-quasi-stayers, the coefficient from a TWFE regression of Y on D in time periods F-1 
-and F-1+{cmd:ℓ} is unbiased for the Average Slope of Treated groups (AST) if and only if 
+quasi-stayers, under a parallel trends assumption 
+the treatment coefficient from a regression of groups' F-1 to F-1+{cmd:ℓ} outcome evolution
+on their the treatment at F-1+{cmd:ℓ} is unbiased for the Average Slope of Treated groups (AST) if and only if 
 the conditional expectation of the outcome evolution from F-1 to F-1+{cmd:ℓ} 
-given the treatment at F-1+{cmd:ℓ} is linear. As a result, if the test statistics are not statistically 
-significant, i.e. the linearity hypothesis cannot be rejected, then one can unbiasedly estimate the
-F-1-to-F-1+{cmd:ℓ} AST using a 
-TWFE regression as the one described above.
+given the treatment at F-1+{cmd:ℓ} is linear. As a result, if the linearity hypothesis cannot be rejected, 
+then one can unbiasedly estimate the
+AST at period F-1+{cmd:ℓ} using the simple OLS regression described above, rather than resorting to the
+non-parametric estimator computed by {cmd:did_had}.
 {p_end}
 
 {p 4 8}

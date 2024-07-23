@@ -1,13 +1,13 @@
 Package: DIDHAD
 Title: Difference-in-Differences in Heterogeneous Adoption Designs with Quasi Stayers 
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: 
-    c(person("Diego", "Ciccia", role = c("aut", "cre"), email = "diego.ciccia@sciencespo.fr"),
+    c(person("Diego", "Ciccia", role = c("aut", "cre"), email = "diego.ciccia@kellogg.northwestern.edu"),
 	person("Felix", "Knau", role = "aut", email = "felix.knau@sciencespo.fr"),
 	person("Doulo", "Sow", role = "aut", email = "doulo.sow@sciencespo.fr"),
     person("Clément", "de Chaisemartin", role = "aut", email = "clement.dechaisemartin@sciencespo.fr"),
     person("Xavier", "D'Haultfoeuille", role = "aut", email = "xavier.dhaultfoeuille@ensae.fr"))
-Maintainer: Diego Ciccia <diego.ciccia@sciencespo.fr>
+Maintainer: Diego Ciccia <diego.ciccia@kellogg.northwestern.edu>
 Description: Estimation of Difference-in-Differences (DiD) estimators from de Chaisemartin and D'Haultfoeuille (2024) <doi:10.2139/ssrn.4284811> in Heterogeneous Adoption Designs with no stayers but with quasi stayers. 
 License: MIT + file LICENSE
 Imports: MASS, YatchewTest (>= 1.1.0), nprobust, ggplot2, plm, rnames, stats, dplyr, haven, rlang
@@ -17,4 +17,4 @@ Author: Diego Ciccia [aut, cre],
   	Clément de Chaisemartin [aut],
     Xavier D'Haultfoeuille [aut]
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
