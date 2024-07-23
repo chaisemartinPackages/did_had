@@ -7,6 +7,7 @@
 #' @param kernel kernel
 #' @param yatchew yatchew
 #' @param placebo placebo
+#' @param dynamic dynamic
 #' @importFrom stats lm qnorm as.formula
 #' @importFrom nprobust lprobust
 #' @import dplyr
@@ -21,7 +22,8 @@ did_had_est <- function(
     level,
     kernel,
     yatchew,
-    placebo = FALSE
+    placebo = FALSE,
+    dynamic
 ) {
 
     df$Y_diff_XX <- df[[Y_XX]]
@@ -44,7 +46,11 @@ did_had_est <- function(
         mu_hat_XX_alt_ub + 1.96 * se_mu_XX >= 0)
     ret$G_XX <- max(df$group_XX, na.rm = TRUE)
     mean_Y_diff_XX <- mean(df$Y_diff_XX, na.rm = TRUE)
-    mean_D_XX <- mean(df$D_XX, na.rm = TRUE)
+    if (isTRUE(dynamic)) {
+        mean_D_XX <- mean(df$cumulative_est_XX, na.rm = TRUE)
+    } else {
+        mean_D_XX <- mean(df$D_XX, na.rm = TRUE)
+    }
     ret$beta_qs_XX <- (mean_Y_diff_XX - mu_hat_XX_alt) / mean_D_XX
     B_hat_Hg_XX <- M_hat_hG_XX/mean_D_XX
     ret$se_naive_XX <- se_mu_XX/mean_D_XX

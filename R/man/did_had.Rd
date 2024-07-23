@@ -15,6 +15,8 @@ did_had(
   level = 0.05,
   kernel = "uni",
   yatchew = FALSE,
+  trends_lin = FALSE,
+  dynamic = FALSE,
   graph_off = FALSE
 )
 }
@@ -38,6 +40,10 @@ did_had(
 \item{kernel}{(character in "tri", "epa", "uni" or "gau") allows you to specify the kernel function used by \code{lprobust()}. Possible choices are triangular, epanechnikov, uniform and gaussian. By default, the program uses a uniform kernel.}
 
 \item{yatchew}{(logical) yatchew yields the result from a non-parametric test that the conditional expectation of the \eqn{F-1} to \eqn{F-1+\ell} outcome evolution given the treatment at \eqn{F-1+\ell} is linear (Yatchew, 1997). This test is implemented using the heteroskedasticity-robust test statistic proposed in Section 3 of de Chaisemartin and D'Haultfoeuille (2024) and it is performed for all the dynamic effects and placebos computed by \code{did_had}. This option requires the YatchewTest package, which is currently available on CRAN.}
+
+\item{trends_lin}{(logical) when this option is specified, the command allows for group-specific linear trends.  This is done by using groups' outcome evolution from period \eqn{F-2} to \eqn{F-1} as an estimator of each group-specific linear trend, and then subtracting this trend from groups' actual outcome evolutions.  Note: due to the fitting of the linear trend in periods \eqn{F-2} to \eqn{F-1}, the number of feasible placebo estimates is reduced by 1 with this option.}
+
+\item{dynamic}{(logical) when this option is specified, effect \eqn{\ell} is scaled by groups' average total treatment dose received from period \eqn{F} to \eqn{F-1+\ell}. Without this option, effect \eqn{\ell} is scaled by groups' average treatment dose at period \eqn{F-1+\ell}. The latter normalization is appropriate if one assumes that groups' outcome at \eqn{F-1+\ell} is only affected by their current treatment (static model). On the other hand, the former normalization is appropriate if one assumes that groups' outcome at \eqn{F-1+\ell} can be affected by their current and past treatments (dynamic model).}
 
 \item{graph_off}{(logical) by default, \code{did_had()} outputs an event-study graph with the effect and placebo estimates and their confidence intervals. When specifying \code{graph_off = TRUE}, the graph is suppressed.}
 }

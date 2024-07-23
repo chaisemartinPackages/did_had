@@ -1,10 +1,11 @@
-*** Program to implement the heterogenous adoption design DID estimator ***
+*** Program to implement the heterogenous adoption design estimator ***
+
 
 capture program drop did_had
 
 program did_had, eclass
 	version 12.0
-	syntax varlist(min=4 max=4 numeric) [if] [in] [, effects(integer 1) placebo(integer 0) level(real 0.05) kernel(string) graph_off yatchew]
+	syntax varlist(min=4 max=4 numeric) [if] [in] [, effects(integer 1) placebo(integer 0) level(real 0.05) kernel(string) graph_off dynamic trends_lin yatchew]
 	
 ****The path of the initial dataset
 local dataset_name_XX `c(filename)'
@@ -24,6 +25,16 @@ if _rc{
 	exit
 }
 
+qui cap which gtools
+if _rc{
+	di ""
+	di as error "You have not installed the gtools package which is used within the did_had command."
+	di `"{stata "ssc install gtools": Click here to install gtools}"'
+	di as input _continue ""
+	
+	exit
+}	
+
 if "`yatchew'" != "" {
 qui cap which yatchew_test
 	if _rc {
@@ -34,6 +45,7 @@ qui cap which yatchew_test
 		exit
 	}
 }
+
 	
 qui{
 	
@@ -73,13 +85,17 @@ gen treatment_XX=`4'
 sort group_XX time_XX
 
 *** determine the switching period -> Ensure F_g only 1 in the first period!!
-gen F_g_XX_int=(treatment_XX[_n]!=treatment_XX[_n-1] & group_XX[_n]==group_XX[_n-1] & treatment_XX[_n-1]==0) // by design pre treatment=0
+
+* Felix: Changes to track each switching period for new option
+
+gen F_g_XX_int=(treatment_XX[_n]!=treatment_XX[_n-1] & group_XX[_n]==group_XX[_n-1]) // dropped this condition
 gen temp_F_g_XX=time_XX if F_g_XX_int==1
 replace temp_F_g_XX=0 if temp_F_g_XX==.
-bys group_XX: gegen F_g_XX=max(temp_F_g_XX)
+bys group_XX: gegen F_g_XX=min(temp_F_g_XX if temp_F_g_XX>0)
 drop temp_F_g_XX
 
-*** check if all groups switch at the same date
+
+*** check if all groups switch at the same date // Felix: This clashes with the new option???
 sum F_g_XX
 if r(sd)!=0{
 	di as error ""
@@ -100,7 +116,33 @@ scalar T_max_XX=r(max)
 
 scalar l_XX=T_max_XX-F_XX+1
 
-* check agains the number 0f specified effects 
+* compute max placebos 
+scalar l_placebo_XX=F_XX-2
+
+
+*** Felix: new option allowing for linear trends
+if "`trends_lin'"!=""{
+	
+	if F_g_XX<3{
+		di as error "Your data has less than 3 pre-treatment periods so it is impossible for the command to account for linear trends."
+		
+		exit
+	}
+	
+	* Adjust the maximum number of placebos 
+	scalar l_placebo_XX=l_placebo_XX-1
+
+	* Transform the outcomes -> generate "proxy for linear trend"
+	gen lin_trend_int_XX=outcome_XX-outcome_XX[_n-1] if time_XX==F_g_XX-1
+	bys group_XX: gegen lin_trend_XX=mean(lin_trend_int_XX)
+	drop lin_trend_int_XX
+	
+	* Then take this into account when calculating the effects
+
+}
+
+
+* check agains the number of specified effects 
 if `effects'>l_XX{
 	di as error ""
 	di as error "The number of effects requested is too large."
@@ -111,8 +153,6 @@ if `effects'>l_XX{
 	local effects=l_XX
 }
 
-* compute max placebos 
-scalar l_placebo_XX=F_XX-2
 
 if `placebo'!=0{
 	if l_placebo_XX<`placebo'&`effects'>=`placebo'{
@@ -128,7 +168,7 @@ if `placebo'!=0{
 	if `effects'<`placebo'{
 		di as error ""
 		di as error "The number of placebo requested cannot be larger than the number of effects requested."
-		di as error "The command cannot compute more than " `effects' " placebo(s)." // Modif. Diego: changed l_placebo_XX with effects
+		di as error "The command cannot compute more than " l_placebo_XX " placebo(s)."
 		
 		* adjust the number of placebos
 		local placebo=min(l_placebo_XX,`effects')
@@ -141,9 +181,50 @@ sort group_XX time_XX
 
 * replace treatment symmetrically for the pre-treatment periods
 if `placebo'!=0{
-forvalues i=1/`placebo'{
-	replace treatment_XX=treatment_XX[_n+2*`i'] if time_XX==F_g_XX-`i'-1
+	
+if "`trends_lin'"==""{
+	forvalues i=1/`placebo'{
+		replace treatment_XX=treatment_XX[_n+2*`i'] if time_XX==F_g_XX-`i'-1
+	}
 }
+
+if "`trends_lin'"!=""{
+	forvalues i=2/`=`placebo'+1'{
+		replace treatment_XX=treatment_XX[_n+2*`i'-1] if time_XX==F_g_XX-`i'-1
+	}
+}
+
+// Note: Now for placebo_1 we replace the treatment with the treatment for effect_2, for placebo_2 with with effect_3 and so on, is this correct?
+// If not it should be fine to just replace [_n+2*`i'] by [_n+2*`i'-1]
+
+}
+
+
+* Felix: option to scale by cummulative treatment change ("dynamic")
+if "`dynamic'"!=""{
+	
+	cap drop cummulative_XX
+	gen cummulative_XX=treatment_XX if F_g_XX==time_XX // Felix: changed for new option
+	
+	* Generate the cummulative treatment change	
+	replace cummulative_XX=cummulative_XX[_n-1]+treatment_XX if group_XX==group_XX[_n-1] & cummulative_XX[_n-1]!=.
+	
+	if `placebo'!=0{
+		
+		if "`trends_lin'"==""{
+		forvalues i=1/`placebo'{
+			replace cummulative_XX=cummulative_XX[_n+2*`i'] if time_XX==F_g_XX-`i'-1
+		}
+		}
+		
+		if "`trends_lin'"!=""{
+		forvalues i=2/`=`placebo'+1'{
+			replace cummulative_XX=cummulative_XX[_n+2*`i'-1] if time_XX==F_g_XX-`i'-1
+		}
+		}
+		
+	}
+	
 }
 
 * matrix storing all results (add version with baseline period for graph later)
@@ -160,10 +241,21 @@ if "`yatchew'" != "" {
 *** call the estimation program inside loops over the number of effects/placebos
 if `placebo'!=0{
 forvalue i=1/`placebo'{
-	cap drop placebo_`i'
-	gen placebo_`i'=outcome_XX-outcome_XX[_n+`i'] if group_XX==group_XX[_n+`i'] & F_g_XX_int[_n+`i'+1]==1
 	
-	did_had_est placebo_`i' group_XX treatment_XX if placebo_`i'!=., level(`level') kernel(`kernel') `yatchew' placebo
+	cap drop placebo_`i'
+	if "`trends_lin'"==""{
+	gen placebo_`i'=outcome_XX-outcome_XX[_n+`i'] if group_XX==group_XX[_n+`i'] & F_g_XX==time_XX[_n+`i'+1] // Felix: changed for new option
+	}
+	
+	// Felix: addition for trends_lin 
+	if "`trends_lin'"!=""{
+		gen placebo_`i'=outcome_XX-outcome_XX[_n+`i'] if group_XX==group_XX[_n+`i'] & F_g_XX==time_XX[_n+`i'+2]
+		
+		replace placebo_`i'=placebo_`i'+`i'*lin_trend_XX
+	}
+	
+	did_had_est placebo_`i' group_XX treatment_XX if placebo_`i'!=., level(`level') kernel(`kernel') `dynamic' `yatchew' placebo_yatchew
+	
 	matrix res_XX[`i',1]=scalar(ß_qs_XX)
 	matrix res_XX[`i',2]=scalar(se_naive_XX)
 	matrix res_XX[`i',3]=scalar(low_XX)
@@ -172,7 +264,7 @@ forvalue i=1/`placebo'{
 	matrix res_XX[`i',6]=scalar(h_star)
 	matrix res_XX[`i',7]=scalar(within_bw_XX)
 	matrix res_XX[`i',8]=-`i'
-
+	
 	if "`yatchew'" != "" {
 		forv j = 1/5 {
 			mat y_res_XX[`i', `j'] = yat_res[1, `j']
@@ -180,27 +272,20 @@ forvalue i=1/`placebo'{
 	}
 	
 	local rownames "`rownames' Placebo_`i'"
-	
-	// changed order
-	/*
-	matrix res_XX[`placebo'-`i'+1,1]=scalar(ß_qs_XX)
-	matrix res_XX[`placebo'-`i'+1,2]=scalar(se_naive_XX)
-	matrix res_XX[`placebo'-`i'+1,3]=scalar(low_XX)
-	matrix res_XX[`placebo'-`i'+1,4]=scalar(up)
-	matrix res_XX[`placebo'-`i'+1,5]=scalar(G_XX)
-	matrix res_XX[`placebo'-`i'+1,6]=scalar(h_star)
-	matrix res_XX[`placebo'-`i'+1,7]=scalar(within_bw_XX)
-	matrix res_XX[`placebo'-`i'+1,8]=-`i'
-	*/
 }	
 }
 
-
 forvalue i=1/`effects'{
+	
 	cap drop effect_`i'
-	gen effect_`i'=outcome_XX-outcome_XX[_n-`i'] if group_XX==group_XX[_n-`i'] & F_g_XX_int[_n-`i'+1]==1
+	gen effect_`i'=outcome_XX-outcome_XX[_n-`i'] if group_XX==group_XX[_n-`i'] & F_g_XX==time_XX[_n-`i'+1] // Felix: changed for new option
+	
+	// Felix: addition for trends_lin 
+	if "`trends_lin'"!=""{
+		replace effect_`i'=effect_`i'-`i'*lin_trend_XX
+	}
 
-	did_had_est effect_`i' group_XX treatment_XX if effect_`i'!=., level(`level') kernel(`kernel') `yatchew'
+	did_had_est effect_`i' group_XX treatment_XX if effect_`i'!=., level(`level') kernel(`kernel') `dynamic' `yatchew'
 	matrix res_XX[`placebo'+`i',1]=scalar(ß_qs_XX)
 	matrix res_XX[`placebo'+`i',2]=scalar(se_naive_XX)
 	matrix res_XX[`placebo'+`i',3]=scalar(low_XX)
@@ -210,13 +295,13 @@ forvalue i=1/`effects'{
 	matrix res_XX[`placebo'+`i',7]=scalar(within_bw_XX)
 	matrix res_XX[`placebo'+`i',8]=`i'
 	
-	local rownames "`rownames' Effect_`i'"
-
 	if "`yatchew'" != "" {
 		forv j = 1/5 {
 			mat y_res_XX[`placebo'+`i', `j'] = yat_res[1, `j']
 		}
 	}
+	
+	local rownames "`rownames' Effect_`i'"
 }
 
 matrix colnames res_XX = "Estimate" "SE" "LB CI" "UB CI" "N" "BW" "N in BW"
@@ -230,7 +315,7 @@ if "`yatchew'" != "" {
 *** Display the results 
 display _newline
 di as input "{hline 90}"
-di as input _skip(38) "Effect Estimates"
+di as input _skip(10) "Effect Estimates"
 di as input "{hline 90}"
 matlist res_XX[`placebo'+1...,1..7]
 di as input "{hline 90}"
@@ -239,7 +324,7 @@ if `placebo'!=0{
 * Only shown when some placebos are requested
 display _newline
 di as input "{hline 90}"
-di as input _skip(38) "Placebo Estimates"
+di as input _skip(10) "Placebo Estimates"
 di as input "{hline 90}"
 matlist res_XX[1..`placebo',1..7]
 di as input "{hline 90}"
@@ -262,14 +347,12 @@ di as input "{hline 70}"
 qui{
 
 *** Adapt matrix for Graph
+matrix mat_graph_XX=J(1,8,0) \ res_XX
+if `placebo'!=0{
 mata: res_new_XX=st_matrix("res_XX")
-if `placebo' != 0 {
-	mata: res_graph_XX=res_new_XX[range(`placebo',1,1),.] \ J(1,8,0) \ res_new_XX[(`placebo'+1::`placebo'+`effects'),]
-}
-else {
-	mata: res_graph_XX= J(1,8,0) \ res_new_XX[(`placebo'+1::`placebo'+`effects'),]
-}
+mata: res_graph_XX=res_new_XX[range(`placebo',1,1),.] \ J(1,8,0) \ res_new_XX[(`placebo'+1::`placebo'+`effects'),]
 mata: st_matrix("mat_graph_XX", res_graph_XX)
+}
 
 
 *** Store ereturns (including e(b) and e(V))
@@ -338,7 +421,7 @@ capture program drop did_had_est
 	
 program did_had_est, eclass
 version 12.0
-syntax varlist(min=3 max=3 numeric) [if] [in] [, level(real 0.05) kernel(string) yatchew placebo]	
+syntax varlist(min=3 max=3 numeric) [if] [in] [, level(real 0.05) kernel(string) dynamic yatchew placebo_yatchew]	
 
 qui{
 	
@@ -398,13 +481,16 @@ gen double y_diff_2_XX=y_diff_XX^2
 ***** Compute optimal bandwidth, mu_hat and its bias using "lprobust" *****
 
 gen grid_XX=0 if _n==1
-noi lprobust y_diff_XX treatment_1_XX, eval(grid_XX) kernel(`kernel')
+
+lprobust y_diff_XX treatment_1_XX, eval(grid_XX) kernel(`kernel')
+
 scalar h_star=e(Result)[1,2] 
 scalar mu_hat_XX_alt=e(Result)[1,5] 
 scalar mu_hat_XX_alt_ub=e(Result)[1,6] 
 scalar M_hat_hG_XX=e(Result)[1,5]-e(Result)[1,6]
 scalar se_mu_XX=e(Result)[1,8] 
 scalar coverage_mu_XX=(e(Result)[1,9]<=0&e(Result)[1,10]>=0) 
+
 
 *** Number of Groups 
 gegen n_group_XX=group(group_est_XX)
@@ -415,8 +501,16 @@ capture drop n_group_XX
 *** consruct all the parts for ß_qs
 sum y_diff_XX
 scalar mean_y_diff_XX=r(mean)
-sum treatment_1_XX
-scalar mean_treatment_XX=r(mean)
+
+* Felix: Note that this also influences the Bias and SE computation!!!
+if "`dynamic'"==""{
+	sum treatment_1_XX
+	scalar mean_treatment_XX=r(mean)
+}
+if "`dynamic'"!=""{
+	sum cummulative_XX
+	scalar mean_treatment_XX=r(mean)
+}
 
 *** Consruct ß_qs
 scalar ß_qs_XX=(mean_y_diff_XX-mu_hat_XX_alt)/mean_treatment_XX
@@ -431,6 +525,7 @@ scalar se_naive_XX=se_mu_XX/mean_treatment_XX
 
 ** CI
 local alpha=`level'
+
 scalar low_XX=ß_qs_XX-B_hat_Hg_XX-invnormal(1-(`alpha'/2))*scalar(se_naive_XX)
 scalar up_XX=ß_qs_XX-B_hat_Hg_XX+invnormal(1-(`alpha'/2))*scalar(se_naive_XX)
 
@@ -438,9 +533,8 @@ scalar up_XX=ß_qs_XX-B_hat_Hg_XX+invnormal(1-(`alpha'/2))*scalar(se_naive_XX)
 count if (treatment_1_XX<=scalar(h_star))
 scalar within_bw_XX=r(N)
 
-
 if "`yatchew'" != "" {
-	local ordn = "`placebo'" == ""
+	local ordn = "`placebo_yatchew'" == ""
 	cap yatchew_test y_diff_XX treatment_1_XX, het_robust order(`ordn')
 	if _rc != 0 {
 		ssc install yatchew_test, replace

@@ -7,6 +7,8 @@
 #' @param placebo placebo
 #' @param level level
 #' @param yatchew yatchew
+#' @param trends_lin trends_lin
+#' @param dynamic dynamic
 #' @importFrom plm pdata.frame make.pbalanced
 #' @importFrom stats lm qnorm as.formula sd
 #' @importFrom rlang :=
@@ -23,7 +25,9 @@ did_het_adoption_main <- function(
     placebo,
     level,
     kernel,
-    yatchew
+    yatchew,
+    trends_lin,
+    dynamic
 ) {
 
     df <- df[c(outcome, group, time, treatment)]
@@ -57,17 +61,36 @@ did_het_adoption_main <- function(
     if (sd(df$F_g_XX, na.rm = TRUE) != 0) {
         stop("Not all groups change their treatment at the same period for the first time. The estimator from de Chaisemartin & D'Haultfoeuille (2024) is only valid if this condition is met.")
     }
+
+    # Save treatment onset period as a scalar
     F_XX <- mean(df$F_g_XX, na.rm = TRUE)
+
+    # Compute max number of effects and placebos
     l_XX <- T_max_XX - F_XX + 1
+    l_placebo_XX <- F_XX - 2
+
+    if (isTRUE(trends_lin)) {
+        if (F_XX < 3) {
+            stop("Your data has less than 3 pre-treatment periods so it is impossible for the command to account for linear trends.")
+        }
+
+        # Adjust number of placebos
+        l_placebo_XX <- l_placebo_XX - 1
+
+        # Adjust outcome var to account for linear trend
+        df <- df[order(df$group_XX, df$time_XX), ]
+        df$lin_trend_int_XX <- ifelse(df$time_XX == F_XX - 1, df$Y_XX - lag(df$Y_XX), NA)
+        df <- df %>% group_by(.data$group_XX) %>% mutate(lin_trend_XX = mean(.data$lin_trend_int_XX, na.rm = TRUE))  %>% ungroup()
+        df$lin_trend_int_XX <- NULL
+
+    }
 
     if (effects > l_XX) {
         message(sprintf("The number of effects requested is too large. The number of effects which can be estimated is at most %.0f.	The command will therefore try to estimate %0.f effect(s).", l_XX, l_XX))
         effects <- l_XX
     }
 
-    l_placebo_XX <- placebo
     if (placebo != 0) {
-        l_placebo_XX <- F_XX - 2
         if (l_placebo_XX < placebo & effects >= placebo) {
             message(sprintf("The number of placebos which can be estimated is at most %.0f. The command will therefore try to estimate %.0f placebo(s).", l_placebo_XX, l_placebo_XX))
             placebo <- l_placebo_XX
@@ -80,10 +103,37 @@ did_het_adoption_main <- function(
 
     df <- df[order(df$group_XX, df$time_XX), ]
     
+    ## Replace treatment symmetrically for the pre-treatment periods
+
     if (placebo != 0) {
-        for (i in 1:placebo) {
-            df$D_XX <- ifelse(df$time_XX == df$F_g_XX - 1 - i,  lead(df$D_XX, 2*i), df$D_XX)
+        if (isTRUE(trends_lin)) {
+            for (i in 2:(placebo+1)) {
+                df$D_XX <- ifelse(df$time_XX == df$F_g_XX - 1 - i,  lead(df$D_XX, 2*i-1), df$D_XX)
+            }
+        } else {
+            for (i in 1:placebo) {
+                df$D_XX <- ifelse(df$time_XX == df$F_g_XX - 1 - i,  lead(df$D_XX, 2*i), df$D_XX)
+            }
         }
+    }
+
+    if (isTRUE(dynamic)) {
+        df$post_XX <- df$time_XX >= df$F_g_XX
+        df <- df %>% group_by(.data$group_XX, .data$post_XX) %>% mutate(cumulative_XX = cumsum(.data$D_XX)) %>% ungroup()
+        df$cumulative_XX <- ifelse(df$post_XX, df$cumulative_XX, 0)
+
+        if (placebo != 0) {
+            if (isTRUE(trends_lin)) {
+                for (i in 2:(placebo+1)) {
+                    df$cumulative_XX <- ifelse(df$time_XX == df$F_g_XX - 1 - i, lead(df$cumulative_XX, 2*i-1), df$cumulative_XX)
+                }
+            } else {
+                for (i in 1:(placebo)) {
+                    df$cumulative_XX <- ifelse(df$time_XX == df$F_g_XX - 1 - i, lead(df$cumulative_XX, 2*i), df$cumulative_XX)
+                }
+            }
+        }
+        df$post_XX <- NULL
     }
 
     resmat <- matrix(NA, nrow = effects + placebo, ncol = 8)
@@ -96,7 +146,14 @@ did_het_adoption_main <- function(
     coln <- c("Estimate", "SE", "LB.CI", "UB.CI", "N", "BW", "N.BW", "ID")
     for (i in 1:effects) {
         df[[paste0("Effect_", i)]] <- ifelse(df$F_g_int_XX == 1, lead(df$Y_XX, i - 1) - lag(df$Y_XX, 1), NA)
-        res <- did_had_est(df = df, Y_XX = paste0("Effect_", i), D_XX = "D_XX", group_XX = "group_XX", level = level, kernel = kernel, yatchew = yatchew)
+        if (isTRUE(dynamic)) {
+            df$cumulative_est_XX <- ifelse(df$F_g_int_XX == 1, lead(df$cumulative_XX, i - 1), NA)
+        }
+        
+        if (isTRUE(trends_lin)) {
+            df[[paste0("Effect_", i)]] <-  df[[paste0("Effect_", i)]] - i*df$lin_trend_XX
+        }
+        res <- did_had_est(df = df, Y_XX = paste0("Effect_", i), D_XX = "D_XX", group_XX = "group_XX", level = level, kernel = kernel, yatchew = yatchew, dynamic = dynamic)
         resmat[i, 1] <- res$beta_qs_XX
         resmat[i, 2] <- res$se_naive_XX
         resmat[i, 3] <- res$low_XX
@@ -112,8 +169,21 @@ did_het_adoption_main <- function(
     }
     if (placebo != 0) {
         for (i in 1:placebo) {
-            df[[paste0("Placebo_", i)]] <- ifelse(df$F_g_int_XX == 1, lag(df$Y_XX, i+1) - lag(df$Y_XX, 1), NA)
-            res <- did_had_est(df = df, Y_XX = paste0("Placebo_", i), D_XX = "D_XX", group_XX = "group_XX", level = level, kernel = kernel, yatchew = yatchew, placebo = TRUE)
+
+            if (isTRUE(trends_lin)) {
+                df[[paste0("Placebo_", i)]] <- ifelse(df$F_g_int_XX == 1, lag(df$Y_XX, i+2) - lag(df$Y_XX, 2), NA)
+                df[[paste0("Placebo_", i)]] <- df[[paste0("Placebo_", i)]] + i * df$lin_trend_XX
+                if (isTRUE(dynamic)) {
+                    df$cumulative_est_XX <- ifelse(df$F_g_int_XX == 1, lag(df$cumulative_XX, i+2), NA)
+                }
+            } else {
+                df[[paste0("Placebo_", i)]] <- ifelse(df$F_g_int_XX == 1, lag(df$Y_XX, i+1) - lag(df$Y_XX, 1), NA)
+                if (isTRUE(dynamic)) {
+                    df$cumulative_est_XX <- ifelse(df$F_g_int_XX == 1, lag(df$cumulative_XX, i+1), NA)
+                }
+            }
+             
+            res <- did_had_est(df = df, Y_XX = paste0("Placebo_", i), D_XX = "D_XX", group_XX = "group_XX", level = level, kernel = kernel, yatchew = yatchew, placebo = TRUE, dynamic = dynamic)
             resmat[effects+i, 1] <- res$beta_qs_XX
             resmat[effects+i, 2] <- res$se_naive_XX
             resmat[effects+i, 3] <- res$low_XX
