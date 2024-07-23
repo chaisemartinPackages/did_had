@@ -26,6 +26,7 @@ with no stayers but some quasi stayers (see de Chaisemartin and D'Haultfoeuille 
 {cmd:dynamic}
 {cmd:trends_lin}
 {cmd:yatchew}
+{cmd:no_updates}
 {cmd:graph_off}]
 {p_end}
 
@@ -144,6 +145,13 @@ given the treatment at F-1+{cmd:ℓ} is linear. As a result, if the linearity hy
 then one can unbiasedly estimate the
 AST at period F-1+{cmd:ℓ} using the simple OLS regression described above, rather than resorting to the
 non-parametric estimator computed by {cmd:did_had}.
+{p_end}
+
+{p 4 8}
+{cmd:no_updates}: this option stops 
+automatic self-updates of the 
+program, which are performed 
+(on average) every 100 runs.
 {p_end}
 
 {p 4 8}
