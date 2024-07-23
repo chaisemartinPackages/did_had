@@ -5,7 +5,14 @@ capture program drop did_had
 
 program did_had, eclass
 	version 12.0
-	syntax varlist(min=4 max=4 numeric) [if] [in] [, effects(integer 1) placebo(integer 0) level(real 0.05) kernel(string) graph_off dynamic trends_lin yatchew]
+	syntax varlist(min=4 max=4 numeric) [if] [in] [, effects(integer 1) placebo(integer 0) level(real 0.05) kernel(string) graph_off dynamic trends_lin yatchew no_updates]
+
+	if "`no_updates'" == "" {
+		if uniform() < 0.01 {
+			noi ssc install did_had, replace
+		}
+	}
+
 	
 ****The path of the initial dataset
 local dataset_name_XX `c(filename)'
