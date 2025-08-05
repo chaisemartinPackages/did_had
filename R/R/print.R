@@ -7,6 +7,8 @@
 #' @noRd
 print.did_had <- function(x, ...) {
 
+    cat("\n")
+    cat(sprintf("Test on Quasi-Untreated: T = %.4f | p-value = %.4f \n", x$results$np_qug_test[1], x$results$np_qug_test[2]))
     cat(noquote(strrep("-", 70)));cat("\n");
     cat(strrep(" ", 25));cat("Effect Estimates");cat("\n");
     cat(noquote(strrep("-", 70)));cat("\n");

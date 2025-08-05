@@ -1,6 +1,6 @@
 Package: DIDHAD
-Title: Difference-in-Differences in Heterogeneous Adoption Designs with Quasi Stayers 
-Version: 1.0.1
+Title: Difference-in-Differences in Heterogeneous Adoption Designs with Quasi Untreated Groups
+Version: 2.0.0
 Authors@R: 
     c(person("Diego", "Ciccia", role = c("aut", "cre"), email = "diego.ciccia@kellogg.northwestern.edu"),
 	person("Felix", "Knau", role = "aut", email = "felix.knau@sciencespo.fr"),
@@ -8,9 +8,9 @@ Authors@R:
     person("Clément", "de Chaisemartin", role = "aut", email = "clement.dechaisemartin@sciencespo.fr"),
     person("Xavier", "D'Haultfoeuille", role = "aut", email = "xavier.dhaultfoeuille@ensae.fr"))
 Maintainer: Diego Ciccia <diego.ciccia@kellogg.northwestern.edu>
-Description: Estimation of Difference-in-Differences (DiD) estimators from de Chaisemartin and D'Haultfoeuille (2024) <doi:10.2139/ssrn.4284811> in Heterogeneous Adoption Designs with no stayers but with quasi stayers. 
+Description: Estimation of Difference-in-Differences (DiD) estimators from de Chaisemartin et al. (2025) <doi:10.48550/arXiv.2405.04465> in Heterogeneous Adoption Designs with Quasi Untreated Groups. 
 License: MIT + file LICENSE
-Imports: MASS, YatchewTest (>= 1.1.0), nprobust, ggplot2, plm, rnames, stats, dplyr, haven, rlang
+Imports: YatchewTest (>= 1.1.0), nprobust, ggplot2, plm, rnames, stats, haven, rlang, dplyr
 Author: Diego Ciccia [aut, cre],
 	Felix Knau [aut],
 	Doulo Sow [aut],

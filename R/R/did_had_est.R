@@ -5,12 +5,13 @@
 #' @param D Treatment variable
 #' @param level level
 #' @param kernel kernel
+#' @param bw_method bw_method
 #' @param yatchew yatchew
 #' @param placebo placebo
 #' @param dynamic dynamic
 #' @importFrom stats lm qnorm as.formula
 #' @importFrom nprobust lprobust
-#' @import dplyr
+#' @importFrom dplyr %>% group_by mutate cur_group_id ungroup lag lead
 #' @import YatchewTest
 #' @returns Dynamic estimation results (with two periods).
 #' @noRd
@@ -21,6 +22,7 @@ did_had_est <- function(
     D_XX,
     level,
     kernel,
+    bw_method,
     yatchew,
     placebo = FALSE,
     dynamic
@@ -34,7 +36,7 @@ did_had_est <- function(
     }
     df$Y_diff_2_XX <- df$Y_diff_XX^2
 
-    lpres <- lprobust(y = as.vector(df$Y_diff_XX), x = as.vector(df$D_XX), eval = c(0), kernel = kernel)
+    lpres <- lprobust(y = as.vector(df$Y_diff_XX), x = as.vector(df$D_XX), eval = c(0), kernel = kernel, bwselect = bw_method)
 
     ret <- list()
     ret$h_star <- lpres$Estimate[1,2]

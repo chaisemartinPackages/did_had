@@ -1,7 +1,7 @@
 # Internal function to produce a graph
 #' @param obj A did_had obj$results object
-#' @import dplyr
 #' @import ggplot2
+#' @importFrom dplyr %>% group_by mutate cur_group_id ungroup lag lead
 #' @returns A ggplot object with the event study graph.
 #' @noRd
 

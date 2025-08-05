@@ -13,10 +13,11 @@ did_had(
   effects = 1,
   placebo = 0,
   level = 0.05,
-  kernel = "uni",
-  yatchew = FALSE,
+  kernel = "epa",
+  bw_method = "mse-dpi",
   trends_lin = FALSE,
   dynamic = FALSE,
+  yatchew = FALSE,
   graph_off = FALSE
 )
 }
@@ -37,13 +38,15 @@ did_had(
 
 \item{level}{(positive numeric) allows you to specify (1-the level) of the confidence intervals shown by the command. By default this level is set to 0.05, thus yielding 95\% level confidence intervals.}
 
-\item{kernel}{(character in "tri", "epa", "uni" or "gau") allows you to specify the kernel function used by \code{lprobust()}. Possible choices are triangular, epanechnikov, uniform and gaussian. By default, the program uses a uniform kernel.}
+\item{kernel}{(character in "tri", "epa", "uni" or "gau") allows you to specify the kernel function used by \code{lprobust()}. Possible choices are triangular, epanechnikov, uniform and gaussian. By default, the program uses a epanechnikov kernel.}
 
-\item{yatchew}{(logical) yatchew yields the result from a non-parametric test that the conditional expectation of the \eqn{F-1} to \eqn{F-1+\ell} outcome evolution given the treatment at \eqn{F-1+\ell} is linear (Yatchew, 1997). This test is implemented using the heteroskedasticity-robust test statistic proposed in Section 3 of de Chaisemartin and D'Haultfoeuille (2024) and it is performed for all the dynamic effects and placebos computed by \code{did_had}. This option requires the YatchewTest package, which is currently available on CRAN.}
+\item{bw_method}{(character in "mse-dpi", "mse-rot", "imse-dpi", "imse-rot", "ce-dpi", "ce-rot") allows you to specify the bandwidth selection procedure used by \code{lprobust}. By default, the program uses \code{mse-dpi}. For more details please consult the \code{lprobust} helpfile.}
 
 \item{trends_lin}{(logical) when this option is specified, the command allows for group-specific linear trends.  This is done by using groups' outcome evolution from period \eqn{F-2} to \eqn{F-1} as an estimator of each group-specific linear trend, and then subtracting this trend from groups' actual outcome evolutions.  Note: due to the fitting of the linear trend in periods \eqn{F-2} to \eqn{F-1}, the number of feasible placebo estimates is reduced by 1 with this option.}
 
 \item{dynamic}{(logical) when this option is specified, effect \eqn{\ell} is scaled by groups' average total treatment dose received from period \eqn{F} to \eqn{F-1+\ell}. Without this option, effect \eqn{\ell} is scaled by groups' average treatment dose at period \eqn{F-1+\ell}. The latter normalization is appropriate if one assumes that groups' outcome at \eqn{F-1+\ell} is only affected by their current treatment (static model). On the other hand, the former normalization is appropriate if one assumes that groups' outcome at \eqn{F-1+\ell} can be affected by their current and past treatments (dynamic model).}
+
+\item{yatchew}{(logical) yatchew yields the result from a non-parametric test that the conditional expectation of the \eqn{F-1} to \eqn{F-1+\ell} outcome evolution given the treatment at \eqn{F-1+\ell} is linear (Yatchew, 1997). This test is implemented using the heteroskedasticity-robust test statistic proposed in Appendix E of de Chaisemartin et al. (2025) and it is performed for all the dynamic effects and placebos computed by \code{did_had()}. For placebos, the null being tested is that groups' \eqn{F-1} to \eqn{F-1-\ell} outcome evolution is mean independent of their \eqn{F-1+\ell} treatment, a non-parametric version of a standard pre-trends test where the \eqn{F-1} to \eqn{F-1-\ell} outcome evolution is regressed on groups' \eqn{F-1+\ell} treatment. This option requires the YatchewTest package, which is currently available on CRAN.}
 
 \item{graph_off}{(logical) by default, \code{did_had()} outputs an event-study graph with the effect and placebo estimates and their confidence intervals. When specifying \code{graph_off = TRUE}, the graph is suppressed.}
 }
@@ -51,20 +54,20 @@ did_had(
 An list object of did_had class. The object contains the estimation results, as well as the selected arguments of the function and a ggplot graph with the event study estimates.
 }
 \description{
-Estimation of the effect of a treatment on an outcome in a heterogeneous adoption design with no stayers but some quasi stayers (de Chaisemartin and D'Haultfoeuille, 2024).
+Estimates the effect of a treatment on an outcome in a heterogeneous adoption design with no untreated, but some quasi-untreated groups (see de Chaisemartin et. al. (2025)).
 }
 \section{Overview}{
 
-\code{did_had()} estimates the effect of a treatment on an outcome in a heterogeneous adoption design (HAD) with no stayers but some quasi stayers. HADs are designs where all groups are untreated in the first period, and then some groups receive a strictly positive treatment dose at a period \eqn{F}, which has to be the same for all treated groups (with variation in treatment timing, the \code{did_multiplegt_dyn()} package may be used). Therefore, there is variation in treatment intensity, but no variation in treatment timing. HADs without stayers are designs where all groups receive a strictly positive treatment dose at period \eqn{F}: no group remains untreated. Then, one cannot use untreated units to recover the counterfactual outcome evolution that treated groups would have experienced from before to after \eqn{F}, without treatment.
+\code{did_had()} estimates the effect of a treatment on an outcome in a heterogeneous adoption design (HAD) with no untreated, but some quasi-untreated groups. HADs are designs where all groups are untreated in the first period, and then some groups receive a strictly positive treatment dose at a period \eqn{F}, which has to be the same for all treated groups (with variation in treatment timing, the \code{did_multiplegt_dyn} package may be used). Therefore, there is variation in treatment intensity, but no variation in treatment timing.
 
-To circumvent this, \code{did_had()} implements the estimator from de Chaisemartin and D'Haultfoeuille (2024) which uses so-called "quasi stayers" as the control group. Quasi stayers are groups that receive a "small enough" treatment dose at F to be regarded as "as good as untreated". Therefore, \code{did_had()} can only be used if there are groups with a treatment dose "close to zero". Formally, the density of groups' period-two treatment dose needs to be strictly positive at zero, something that can be assessed by plotting a kernel density estimate of that density.
+HADs without untreated groups are designs where all groups receive a strictly positive treatment dose at period \eqn{F}. Then, one cannot use untreated units to recover the counterfactual outcome evolution that treated groups would have experienced from before to after \eqn{F}, without treatment. To circumvent this, \code{did_had()} implements the estimator from de Chaisemartin et. al. (2025) which uses so-called "quasi-untreated groups" as the control group. Quasi-untreated groups are groups that receive a "small enough" treatment dose at \eqn{F} to be regarded as "as good as untreated". Therefore, \code{did_had()} can only be used if there are groups with a treatment dose "close to zero". Formally, the command checks the presence of quasi untreated groups via the test proposed in section 3.3 of de Chaisemartin et al. (2025).
 
-The command makes use of the \code{lprobust()} command by Calonico, Cattaneo and Farrell (2019) to determine an optimal bandwidth, i.e. a treatment dose below which groups can be considered as quasi stayers. To estimate the treatment's effect, the command starts by computing the difference between the change in outcome of all groups and the intercept in a local linear regression of the outcome change on the treatment dose among quasi-stayers. Then, that difference is scaled by groups' average treatment dose at period two. Standard errors and confidence intervals are also computed leveraging \code{lprobust()}. We recommend that users of \code{did_had} cite de Chaisemartin and D'Haultfoeuille (2024), Calonico, Cattaneo and Farrell (2019), and Calonico, Cattaneo and Farrell (2018).
+The command makes use of the \code{lprobust} command by Calonico, Cattaneo and Farrell (2019) to determine an optimal bandwidth, i.e. a treatment dose below which groups can be considered as quasi-untreated. To estimate the treatment's effect, the command starts by computing the difference between the change in outcome of all groups and the intercept in a local linear regression of the outcome change on the treatment dose among quasi-untreated groups. Then, that difference is scaled by groups' average treatment dose at period two. Standard errors and confidence intervals are also computed leveraging \code{lprobust}. We recommend that users of \code{did_had()} cite de Chaisemartin et. al. (2025), Calonico, Cattaneo and Farrell (2019), and Calonico, Cattaneo and Farrell (2018).
 }
 
 \section{Interpreting the results from the \code{yatchew} option}{
 
-Following Theorem 1 and Equation 5 of de Chaisemartin and D'Haultfoeuille (2024), in designs where there are stayers or quasi-stayers, the coefficient from a TWFE regression of Y on D in time periods \eqn{F-1} and \eqn{F-1+\ell} is unbiased for the Average Slope of Treated groups (AST) if and only if the conditional expectation of the outcome evolution from \eqn{F-1} to \eqn{F-1+\ell} given the treatment at \eqn{F-1+\ell} is linear. As a result, if the test statistics are not statistically significant, i.e. the linearity hypothesis cannot be rejected, then one can unbiasedly estimate the \eqn{F-1}-to-\eqn{F-1+\ell} AST using a TWFE regression as the one described above.
+Following Theorem 5 of de Chaisemartin et. al. (2025), in designs where there are untreated or quasi-untreated groups, under a parallel trends assumption the treatment coefficient from a regression of groups' \eqn{F-1} to \eqn{F-1+\ell} outcome evolution on their the treatment at \eqn{F-1+\ell} is unbiased for the WAS if and only if the conditional expectation of the outcome evolution from \eqn{F-1} to \eqn{F-1+\ell} given the treatment at \eqn{F-1+\ell} is linear. As a result, if the linearity hypothesis cannot be rejected, then one can unbiasedly estimate the WAS at period \eqn{F-1+\ell} using the simple OLS regression described above, rather than resorting to the non-parametric estimator computed by \code{did_had()}.
 }
 
 \section{Contacts}{
@@ -77,14 +80,13 @@ Mail: \href{mailto:chaisemartin.packages@gmail.com}{chaisemartin.packages@gmail.
 
 \section{References}{
 
-
-de Chaisemartin, C and D'Haultfoeuille, X (2024). \href{https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4284811}{Two-way Fixed Effects and Difference-in-Difference Estimators in Heterogeneous Adoption Designs}
+de Chaisemartin, C., Ciccia, D., D'Haultfoeuille, X. and Knau, F. (2025). \href{https://arxiv.org/abs/2405.04465}{Difference-in-Differences Estimators When No Unit Remains Untreated}.
 
 Calonico, S., M. D. Cattaneo, and M. H. Farrell. (2019). \href{https://nppackages.github.io/references/Calonico-Cattaneo-Farrell_2019_JSS.pdf}{nprobust: Nonparametric Kernel-Based Estimation and Robust Bias-Corrected Inference}.
 
 Calonico, S., M. D. Cattaneo, and M. H. Farrell. (2018). \href{https://nppackages.github.io/references/Calonico-Cattaneo-Farrell_2018_JASA.pdf}{On the Effect of Bias Estimation on Coverage Accuracy in Nonparametric Inference}.
 
-Yatchew, A. (1997). \href{https://www.sciencedirect.com/science/article/pii/S0165176597002188}{An elementary estimator of the partial linear model}.
+Yatchew, A. (1997). An elementary estimator of the partial linear model, \doi{doi:10.1016/S0165-1765(97)00218-8}.
 }
 
 \examples{
