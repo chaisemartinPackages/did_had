@@ -70,12 +70,14 @@ did_het_adoption_main <- function(
     F_XX <- mean(subset(df, df$F_g_XX != T_max_XX + 1)$F_g_XX, na.rm = TRUE)
 
     # Implement test for quasi-untreated 
-    F_g_set <- subset(df, df$time_XX == F_XX)[,c("F_g_XX","D_XX")]
+    F_g_set <- subset(df, df$time_XX == F_XX)["F_g_XX"]
     n_stayers <- nrow(subset(F_g_set, F_g_set$F_g_XX == T_max_XX + 1))
     if (n_stayers != 0) {
         message(sprintf("NOTE: %.0f groups are untreated at period 2.", n_stayers))
     }
-    D_2_vec <- sort(subset(F_g_set, F_g_set$F_g_XX < T_max_XX)$D_XX)
+    F_g_set <- NULL
+
+    D_2_vec <- sort(subset(df, df$F_g_int_XX == 1)$D_XX)
 
     #Compute p-values 
     # Test statistic converges in distribution to (E_1/E_2) where E_1 and E_2 are iid random variables from an Exponential(1) distribution
@@ -83,7 +85,7 @@ did_het_adoption_main <- function(
     t_np <- D_2_vec[1]/(D_2_vec[2] - D_2_vec[1])
     np_qug_test <- c(t_np, 1-(1/(1+(1/t_np))))
     names(np_qug_test) <- c("T", "p-value")
-    F_g_set <- n_stayers <- D_2_vec <- t_np <- NULL
+    D_2_vec <- t_np <- NULL
 
     df$F_g_XX <- ifelse(df$F_g_XX == T_max_XX + 1, F_XX, df$F_g_XX)
 
@@ -167,10 +169,7 @@ did_het_adoption_main <- function(
     rown<- sapply(1:effects, function(x) paste0("Effect_", x))
     coln <- c("Estimate", "SE", "LB.CI", "UB.CI", "N", "BW", "N.BW", "ID")
     for (i in 1:effects) {
-        df[[paste0("Effect_", i)]] <- ifelse(df$F_g_XX == df$time_XX, lead(df$Y_XX, i - 1) - lag(df$Y_XX, 1), NA)
-        if (isTRUE(dynamic)) {
-            df$cumulative_est_XX <- ifelse(df$F_g_XX == df$time_XX, lead(df$cumulative_XX, i - 1), NA)
-        }
+        df[[paste0("Effect_", i)]] <- ifelse(df$F_g_XX+(i-1)==df$time_XX, df$Y_XX - lag(df$Y_XX, i), NA)
         
         if (isTRUE(trends_lin)) {
             df[[paste0("Effect_", i)]] <-  df[[paste0("Effect_", i)]] - i*df$lin_trend_XX
@@ -193,16 +192,10 @@ did_het_adoption_main <- function(
         for (i in 1:placebo) {
 
             if (isTRUE(trends_lin)) {
-                df[[paste0("Placebo_", i)]] <- ifelse(df$F_g_XX == df$time_XX, lag(df$Y_XX, i+2) - lag(df$Y_XX, 2), NA)
+                df[[paste0("Placebo_", i)]] <- ifelse(df$F_g_XX-(i+2) == df$time_XX, df$Y_XX - lead(df$Y_XX, i), NA)
                 df[[paste0("Placebo_", i)]] <- df[[paste0("Placebo_", i)]] + i * df$lin_trend_XX
-                if (isTRUE(dynamic)) {
-                    df$cumulative_est_XX <- ifelse(df$F_g_XX == df$time_XX, lag(df$cumulative_XX, i+2), NA)
-                }
             } else {
-                df[[paste0("Placebo_", i)]] <- ifelse(df$F_g_XX == df$time_XX, lag(df$Y_XX, i+1) - lag(df$Y_XX, 1), NA)
-                if (isTRUE(dynamic)) {
-                    df$cumulative_est_XX <- ifelse(df$F_g_XX == df$time_XX, lag(df$cumulative_XX, i+1), NA)
-                }
+                df[[paste0("Placebo_", i)]] <- ifelse(df$F_g_XX-(i+1) == df$time_XX, df$Y_XX - lead(df$Y_XX, i), NA)
             }
              
             res <- did_had_est(df = df, Y_XX = paste0("Placebo_", i), D_XX = "D_XX", group_XX = "group_XX", level = level, kernel = kernel, bw_method = bw_method, yatchew = yatchew, placebo = TRUE, dynamic = dynamic)
@@ -224,7 +217,7 @@ did_het_adoption_main <- function(
 
     colnames(resmat) <- coln
     rownames(resmat) <- rown
-    out <- list(resmat = resmat, res.effects = effects, res.placebo = placebo, np_qug_test = np_qug_test)
+    out <- list(resmat = resmat, res.effects = effects, res.placebo = placebo, np_qug_test = np_qug_test, n_stayers = n_stayers)
 
     if (isTRUE(yatchew)) {
         rownames(y_resmat) <- rown

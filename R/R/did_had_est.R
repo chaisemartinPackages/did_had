@@ -49,7 +49,7 @@ did_had_est <- function(
     ret$G_XX <- max(df$group_XX, na.rm = TRUE)
     mean_Y_diff_XX <- mean(df$Y_diff_XX, na.rm = TRUE)
     if (isTRUE(dynamic)) {
-        mean_D_XX <- mean(df$cumulative_est_XX, na.rm = TRUE)
+        mean_D_XX <- mean(df$cumulative_XX, na.rm = TRUE)
     } else {
         mean_D_XX <- mean(df$D_XX, na.rm = TRUE)
     }
