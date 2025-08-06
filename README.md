@@ -117,11 +117,11 @@ did_had y g t d, effects(5) placebo(4) level(0.1)
 The command requires that the [**lprobust**](https://github.com/nppackages/nprobust/tree/master) package be installed on the user's machine.
 
 ## Authors
-Clément de Chaisemartin, Economics Department, Sciences Po, France.
-Diego Ciccia, Kellogg School of Management, Northwestern University, USA.
-Xavier D'Haultfoeuille, CREST-ENSAE, France.
-Felix Knau, LMU Munich, Germany.
-Doulo Sow, Princeton University, USA.
++ Clément de Chaisemartin, Economics Department, Sciences Po, France.
++ Diego Ciccia, Kellogg School of Management, Northwestern University, USA.
++ Xavier D'Haultfoeuille, CREST-ENSAE, France.
++ Felix Knau, LMU Munich, Germany.
++ Doulo Sow, Princeton University, USA.
 
 **<ins>Contact:</ins>**  
 [chaisemartin.packages@gmail.com](mailto:chaisemartin.packages@gmail.com)
