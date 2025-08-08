@@ -69,24 +69,13 @@ did_het_adoption_main <- function(
     # Save treatment onset period as a scalar
     F_XX <- mean(subset(df, df$F_g_XX != T_max_XX + 1)$F_g_XX, na.rm = TRUE)
 
-    # Implement test for quasi-untreated 
+    # Check whether there are stayers
     F_g_set <- subset(df, df$time_XX == F_XX)["F_g_XX"]
     n_stayers <- nrow(subset(F_g_set, F_g_set$F_g_XX == T_max_XX + 1))
     if (n_stayers != 0) {
         message(sprintf("NOTE: %.0f groups are untreated at period 2.", n_stayers))
     }
     F_g_set <- NULL
-
-    D_2_vec <- sort(subset(df, df$F_g_int_XX == 1)$D_XX)
-
-    #Compute p-values 
-    # Test statistic converges in distribution to (E_1/E_2) where E_1 and E_2 are iid random variables from an Exponential(1) distribution
-    # This yields the CDF P(T<t) = (\alpha)/(\alpha + (\beta/t)) where \alpha and \beta are the parameters of the two exponential distributions, so in this case both are 1
-    t_np <- D_2_vec[1]/(D_2_vec[2] - D_2_vec[1])
-    np_qug_test <- c(t_np, 1-(1/(1+(1/t_np))))
-    names(np_qug_test) <- c("T", "p-value")
-    D_2_vec <- t_np <- NULL
-
     df$F_g_XX <- ifelse(df$F_g_XX == T_max_XX + 1, F_XX, df$F_g_XX)
 
     # Compute max number of effects and placebos
@@ -160,14 +149,14 @@ did_het_adoption_main <- function(
         df$post_XX <- NULL
     }
 
-    resmat <- matrix(NA, nrow = effects + placebo, ncol = 8)
+    resmat <- matrix(NA, nrow = effects + placebo, ncol = 10)
     if (isTRUE(yatchew)) {
         y_resmat <- matrix(NA, nrow = effects + placebo, ncol = 5)
         colnames(y_resmat) <- c("\U03C3\U00B2_lin", "\U03C3\U00B2_diff", "T_hr", "p-value", "N")    
     }
 
     rown<- sapply(1:effects, function(x) paste0("Effect_", x))
-    coln <- c("Estimate", "SE", "LB.CI", "UB.CI", "N", "BW", "N.BW", "ID")
+    coln <- c("Estimate", "SE", "LB.CI", "UB.CI", "N", "BW", "N.BW", "T", "p.val", "ID")
     for (i in 1:effects) {
         df[[paste0("Effect_", i)]] <- ifelse(df$F_g_XX+(i-1)==df$time_XX, df$Y_XX - lag(df$Y_XX, i), NA)
         
@@ -182,7 +171,9 @@ did_het_adoption_main <- function(
         resmat[i, 5] <- res$G_XX
         resmat[i, 6] <- res$h_star
         resmat[i, 7] <- res$within_bw_XX
-        resmat[i, 8] <- i
+        resmat[i, 8] <- res$np_qug_test[1]
+        resmat[i, 9] <- res$np_qug_test[2]
+        resmat[i, 10] <- i
 
         if (isTRUE(yatchew)) {
             y_resmat[i, 1:5] <- as.vector(res$yt_res)
@@ -206,7 +197,7 @@ did_het_adoption_main <- function(
             resmat[effects+i, 5] <- res$G_XX
             resmat[effects+i, 6] <- res$h_star
             resmat[effects+i, 7] <- res$within_bw_XX
-            resmat[effects+i, 8] <- -i
+            resmat[effects+i, 10] <- -i
 
             if (isTRUE(yatchew)) {
                 y_resmat[effects+i, 1:5] <- as.vector(res$yt_res)
@@ -217,7 +208,7 @@ did_het_adoption_main <- function(
 
     colnames(resmat) <- coln
     rownames(resmat) <- rown
-    out <- list(resmat = resmat, res.effects = effects, res.placebo = placebo, np_qug_test = np_qug_test, n_stayers = n_stayers)
+    out <- list(resmat = resmat, res.effects = effects, res.placebo = placebo, n_stayers = n_stayers)
 
     if (isTRUE(yatchew)) {
         rownames(y_resmat) <- rown

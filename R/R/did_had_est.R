@@ -31,6 +31,15 @@ did_had_est <- function(
     df$Y_diff_XX <- df[[Y_XX]]
     df <- subset(df, !is.na(df$Y_diff_XX) & !is.na(df$D_XX))
 
+    # QUG Test
+    D_2_vec <- sort(subset(df, df$D_XX > 0)$D_XX)
+    t_np <- D_2_vec[1]/(D_2_vec[2] - D_2_vec[1])
+    # Test statistic converges in distribution to (E_1/E_2) where E_1 and E_2 are iid random variables from an Exponential(1) distribution
+    # This yields the CDF P(T<t) = (\alpha)/(\alpha + (\beta/t)) where \alpha and \beta are the parameters of the two exponential distributions, so in this case both are 1
+    np_qug_test <- c(t_np, 1-(1/(1+(1/t_np))))
+    names(np_qug_test) <- c("T", "p-value")
+    D_2_vec <- t_np <- NULL
+
     for (j in c(2,3,4)) {
         df[[paste0("D_",j,"_XX")]] <- df$D_XX^j
     }
@@ -62,6 +71,7 @@ did_had_est <- function(
     df$count <- as.numeric(df$D_XX <= ret$h_star)
     ret$within_bw_XX <- sum(df$count, na.rm = TRUE)
     df$count <- NULL
+    ret$np_qug_test <- np_qug_test
 
     if (isTRUE(yatchew)) {
         ret$yt_res <- yatchew_test(data = df, Y = "Y_diff_XX", D = "D_XX", het_robust = TRUE, order = 1-as.numeric(placebo))$results

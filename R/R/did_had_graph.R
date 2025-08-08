@@ -6,7 +6,7 @@
 #' @noRd
 
 did_had_graph <- function(obj) {
-    gr_mat <- as.data.frame(rbind(obj$resmat, rep(0,8)))
+    gr_mat <- as.data.frame(rbind(obj$resmat, rep(0,10)))
     gr_mat <- gr_mat[order(gr_mat$ID), ]
     gr_obj <- ggplot(gr_mat,aes(x = .data$ID, y = .data$Estimate, group = 1)) + 
     geom_line(colour = "blue") + 
