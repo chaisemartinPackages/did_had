@@ -114,7 +114,7 @@ if r(sd)!=0{
 	di as error ""
 	di as error "Not all groups change their treatment"
 	di as error "at the same period for the first time."
-	di as error "The estimator from de Chaisemartin & D'Haultfoeuille (2024)"
+	di as error "The estimator from de Chaisemartin et. al. (2025)"
 	di as error "is only valid if this condition is met."
 	exit
 }
