@@ -54,7 +54,9 @@ from de Chaisemartin et. al. (2025) which uses so-called "quasi-untreated groups
 Quasi-untreated groups are groups that receive a "small enough" treatment dose at F to be regarded as "as good as untreated".
 Therefore, {cmd:did_had} can only be used if there are groups with a treatment dose "close to zero".
 Formally, the command checks the presence of quasi untreated groups 
-via the test proposed in section 3.3 of de Chaisemartin et al. (2025).
+via the test proposed in section 3.3 of de Chaisemartin et al. (2025). This test is automatically performed once for each 
+event-study effect and results are reported in the output table. If the results are the same for
+each event-study effect, this indicates that the treatment changes only once. 
 {p_end}
 
 {p 8 8}
