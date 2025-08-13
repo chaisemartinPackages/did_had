@@ -9,10 +9,12 @@
 #' @param yatchew yatchew
 #' @param trends_lin trends_lin
 #' @param dynamic dynamic
+#' @param kernel kernel
+#' @param bw_method bw_method
 #' @importFrom plm pdata.frame make.pbalanced
 #' @importFrom stats lm qnorm as.formula sd
 #' @importFrom rlang :=
-#' @import dplyr
+#' @importFrom dplyr %>% group_by mutate cur_group_id ungroup lag lead
 #' @returns Main estimation results.
 #' @noRd
 did_het_adoption_main <- function(
@@ -25,6 +27,7 @@ did_het_adoption_main <- function(
     placebo,
     level,
     kernel,
+    bw_method,
     yatchew,
     trends_lin,
     dynamic
@@ -52,18 +55,28 @@ did_het_adoption_main <- function(
     t_min_XX <- min(df$time_XX, na.rm = TRUE)
     T_max_XX <- max(df$time_XX, na.rm = TRUE)
 
-    df$F_g_int_XX <-  as.numeric((df$D_XX != lag(df$D_XX) & df$time_XX != 1 & lag(df$D_XX) == 0))
+    ## Modif Diego (05.08.25): Allow to include stayers in the estimation
+    df$F_g_int_XX <-  as.numeric((df$D_XX != lag(df$D_XX) & df$time_XX != 1 & df$group_XX == lag(df$group_XX)))
     df$F_g_temp_XX <- df$time_XX * df$F_g_int_XX
-    df$F_g_temp_XX <- ifelse(df$F_g_temp_XX == 0, T_max_XX + 1, df$F_g_temp_XX)
+    df$F_g_temp_XX <- as.numeric(ifelse(df$F_g_temp_XX == 0, T_max_XX + 1, df$F_g_temp_XX))
     df <- df %>% group_by(.data$group_XX) %>% mutate(F_g_XX = min(.data$F_g_temp_XX, na.rm = TRUE)) %>% ungroup()
     df$F_g_temp_XX <- NULL
 
-    if (sd(df$F_g_XX, na.rm = TRUE) != 0) {
-        stop("Not all groups change their treatment at the same period for the first time. The estimator from de Chaisemartin & D'Haultfoeuille (2024) is only valid if this condition is met.")
+    if (sd(subset(df, df$F_g_XX != T_max_XX + 1)$F_g_XX, na.rm = TRUE) != 0) {
+        stop("Not all groups change their treatment at the same period for the first time. The estimator from de Chaisemartin et. al. (2025) is only valid if this condition is met.")
     }
 
     # Save treatment onset period as a scalar
-    F_XX <- mean(df$F_g_XX, na.rm = TRUE)
+    F_XX <- mean(subset(df, df$F_g_XX != T_max_XX + 1)$F_g_XX, na.rm = TRUE)
+
+    # Check whether there are stayers
+    F_g_set <- subset(df, df$time_XX == F_XX)["F_g_XX"]
+    n_stayers <- nrow(subset(F_g_set, F_g_set$F_g_XX == T_max_XX + 1))
+    if (n_stayers != 0) {
+        message(sprintf("NOTE: %.0f groups are untreated at period 2.", n_stayers))
+    }
+    F_g_set <- NULL
+    df$F_g_XX <- ifelse(df$F_g_XX == T_max_XX + 1, F_XX, df$F_g_XX)
 
     # Compute max number of effects and placebos
     l_XX <- T_max_XX - F_XX + 1
@@ -136,24 +149,21 @@ did_het_adoption_main <- function(
         df$post_XX <- NULL
     }
 
-    resmat <- matrix(NA, nrow = effects + placebo, ncol = 8)
+    resmat <- matrix(NA, nrow = effects + placebo, ncol = 10)
     if (isTRUE(yatchew)) {
         y_resmat <- matrix(NA, nrow = effects + placebo, ncol = 5)
         colnames(y_resmat) <- c("\U03C3\U00B2_lin", "\U03C3\U00B2_diff", "T_hr", "p-value", "N")    
     }
 
     rown<- sapply(1:effects, function(x) paste0("Effect_", x))
-    coln <- c("Estimate", "SE", "LB.CI", "UB.CI", "N", "BW", "N.BW", "ID")
+    coln <- c("Estimate", "SE", "LB.CI", "UB.CI", "N", "BW", "N.BW", "T", "p.val", "ID")
     for (i in 1:effects) {
-        df[[paste0("Effect_", i)]] <- ifelse(df$F_g_int_XX == 1, lead(df$Y_XX, i - 1) - lag(df$Y_XX, 1), NA)
-        if (isTRUE(dynamic)) {
-            df$cumulative_est_XX <- ifelse(df$F_g_int_XX == 1, lead(df$cumulative_XX, i - 1), NA)
-        }
+        df[[paste0("Effect_", i)]] <- ifelse(df$F_g_XX+(i-1)==df$time_XX, df$Y_XX - lag(df$Y_XX, i), NA)
         
         if (isTRUE(trends_lin)) {
             df[[paste0("Effect_", i)]] <-  df[[paste0("Effect_", i)]] - i*df$lin_trend_XX
         }
-        res <- did_had_est(df = df, Y_XX = paste0("Effect_", i), D_XX = "D_XX", group_XX = "group_XX", level = level, kernel = kernel, yatchew = yatchew, dynamic = dynamic)
+        res <- did_had_est(df = df, Y_XX = paste0("Effect_", i), D_XX = "D_XX", group_XX = "group_XX", level = level, kernel = kernel, bw_method =  bw_method, yatchew = yatchew, dynamic = dynamic)
         resmat[i, 1] <- res$beta_qs_XX
         resmat[i, 2] <- res$se_naive_XX
         resmat[i, 3] <- res$low_XX
@@ -161,7 +171,9 @@ did_het_adoption_main <- function(
         resmat[i, 5] <- res$G_XX
         resmat[i, 6] <- res$h_star
         resmat[i, 7] <- res$within_bw_XX
-        resmat[i, 8] <- i
+        resmat[i, 8] <- res$np_qug_test[1]
+        resmat[i, 9] <- res$np_qug_test[2]
+        resmat[i, 10] <- i
 
         if (isTRUE(yatchew)) {
             y_resmat[i, 1:5] <- as.vector(res$yt_res)
@@ -171,19 +183,13 @@ did_het_adoption_main <- function(
         for (i in 1:placebo) {
 
             if (isTRUE(trends_lin)) {
-                df[[paste0("Placebo_", i)]] <- ifelse(df$F_g_int_XX == 1, lag(df$Y_XX, i+2) - lag(df$Y_XX, 2), NA)
+                df[[paste0("Placebo_", i)]] <- ifelse(df$F_g_XX-(i+2) == df$time_XX, df$Y_XX - lead(df$Y_XX, i), NA)
                 df[[paste0("Placebo_", i)]] <- df[[paste0("Placebo_", i)]] + i * df$lin_trend_XX
-                if (isTRUE(dynamic)) {
-                    df$cumulative_est_XX <- ifelse(df$F_g_int_XX == 1, lag(df$cumulative_XX, i+2), NA)
-                }
             } else {
-                df[[paste0("Placebo_", i)]] <- ifelse(df$F_g_int_XX == 1, lag(df$Y_XX, i+1) - lag(df$Y_XX, 1), NA)
-                if (isTRUE(dynamic)) {
-                    df$cumulative_est_XX <- ifelse(df$F_g_int_XX == 1, lag(df$cumulative_XX, i+1), NA)
-                }
+                df[[paste0("Placebo_", i)]] <- ifelse(df$F_g_XX-(i+1) == df$time_XX, df$Y_XX - lead(df$Y_XX, i), NA)
             }
              
-            res <- did_had_est(df = df, Y_XX = paste0("Placebo_", i), D_XX = "D_XX", group_XX = "group_XX", level = level, kernel = kernel, yatchew = yatchew, placebo = TRUE, dynamic = dynamic)
+            res <- did_had_est(df = df, Y_XX = paste0("Placebo_", i), D_XX = "D_XX", group_XX = "group_XX", level = level, kernel = kernel, bw_method = bw_method, yatchew = yatchew, placebo = TRUE, dynamic = dynamic)
             resmat[effects+i, 1] <- res$beta_qs_XX
             resmat[effects+i, 2] <- res$se_naive_XX
             resmat[effects+i, 3] <- res$low_XX
@@ -191,7 +197,7 @@ did_het_adoption_main <- function(
             resmat[effects+i, 5] <- res$G_XX
             resmat[effects+i, 6] <- res$h_star
             resmat[effects+i, 7] <- res$within_bw_XX
-            resmat[effects+i, 8] <- -i
+            resmat[effects+i, 10] <- -i
 
             if (isTRUE(yatchew)) {
                 y_resmat[effects+i, 1:5] <- as.vector(res$yt_res)
@@ -202,7 +208,7 @@ did_het_adoption_main <- function(
 
     colnames(resmat) <- coln
     rownames(resmat) <- rown
-    out <- list(resmat = resmat, res.effects = effects, res.placebo = placebo)
+    out <- list(resmat = resmat, res.effects = effects, res.placebo = placebo, n_stayers = n_stayers)
 
     if (isTRUE(yatchew)) {
         rownames(y_resmat) <- rown

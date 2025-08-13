@@ -1,13 +1,19 @@
 *** Program to implement the heterogenous adoption design estimator ***
 
+*** Changes Felix:
+* Adapt _no_updates, same as in did_multiplegt_dyn
+* Add test on quasi stayers
+
+* This Version: 05.08.2025
+
 
 capture program drop did_had
 
 program did_had, eclass
 	version 12.0
-	syntax varlist(min=4 max=4 numeric) [if] [in] [, effects(integer 1) placebo(integer 0) level(real 0.05) kernel(string) graph_off dynamic trends_lin yatchew no_updates]
+	syntax varlist(min=4 max=4 numeric) [if] [in] [, effects(integer 1) placebo(integer 0) level(real 0.05) kernel(string) bw_method(string) graph_off dynamic trends_lin yatchew _no_updates graph_opts(string)]
 
-	if "`no_updates'" == "" {
+	if "`_no_updates'" == "" {
 		if uniform() < 0.01 {
 			noi ssc install did_had, replace
 		}
@@ -19,7 +25,6 @@ local dataset_name_XX `c(filename)'
 //>>
 preserve
 mata: mata clear
-	
 	
 *** Check if auxillary packages are installed
 qui cap which lprobust
@@ -58,8 +63,13 @@ qui{
 	
 *** set default for kernel if not specified
 if "`kernel'"==""{
-	local kernel="uni"
+	local kernel="epa"
 }	
+
+*** set default bandwidth selection method if not specified 
+if "`bw_method'"==""{
+	local bw_method="mse-dpi"
+}
 	
 *** drop all variables that will be generated -> some not used anymore???
 capture drop outcome_XX
@@ -85,34 +95,44 @@ tokenize `varlist' // Specify Variables as y g t d
 *** Import the 4 input variables 
 gen outcome_XX=`1'
 gegen group_XX=group(`2')
-gegen time_XX=group(`3') // actually is grouping the time here correct? -> yes because we do grouping over the full dataset and not within groups so the same year for example will still be the same time_XX even if it the first observation for one group but the third for another
+gegen time_XX=group(`3')
 gen treatment_XX=`4'	
 
 *** Sort the data 
 sort group_XX time_XX
 
-*** determine the switching period -> Ensure F_g only 1 in the first period!!
-
-* Felix: Changes to track each switching period for new option
-
+*** determine the switching period. Ensure F_g only 1 in the first period
 gen F_g_XX_int=(treatment_XX[_n]!=treatment_XX[_n-1] & group_XX[_n]==group_XX[_n-1]) // dropped this condition
 gen temp_F_g_XX=time_XX if F_g_XX_int==1
 replace temp_F_g_XX=0 if temp_F_g_XX==.
 bys group_XX: gegen F_g_XX=min(temp_F_g_XX if temp_F_g_XX>0)
 drop temp_F_g_XX
 
-
-*** check if all groups switch at the same date // Felix: This clashes with the new option???
+*** check if all groups switch at the same date
 sum F_g_XX
 if r(sd)!=0{
 	di as error ""
 	di as error "Not all groups change their treatment"
 	di as error "at the same period for the first time."
-	di as error "The estimator from de Chaisemartin & D'Haultfoeuille (2024)"
+	di as error "The estimator from de Chaisemartin et. al. (2025)"
 	di as error "is only valid if this condition is met."
 	exit
 }
 scalar F_XX=r(mean)
+
+// Modif Felix (29.07.25): Allow to include stayers in the estimation
+gen d_miss_XX = (treatment_XX==.)
+bys group_XX: gegen no_d_miss_XX=max(d_miss_XX)
+bys group_XX: gen no_d_miss_g_XX=no_d_miss_XX if _n==1
+count if F_g_XX==. & no_d_miss_g_XX==0
+local n_stayers=r(N)
+replace F_g_XX=F_XX if F_g_XX==. & no_d_miss_XX==0
+cap drop d_miss_XX no_d_miss_XX no_d_miss_g_XX
+
+if `n_stayers'>0{
+	noi di ""
+	noi di as input "NOTE: `n_stayers' groups are untreated at period two"
+}
 
 *** checking number of effects/placebos
 
@@ -127,7 +147,7 @@ scalar l_XX=T_max_XX-F_XX+1
 scalar l_placebo_XX=F_XX-2
 
 
-*** Felix: new option allowing for linear trends
+*** Modif Felix: new option allowing for linear trends
 if "`trends_lin'"!=""{
 	
 	if F_g_XX<3{
@@ -139,17 +159,16 @@ if "`trends_lin'"!=""{
 	* Adjust the maximum number of placebos 
 	scalar l_placebo_XX=l_placebo_XX-1
 
-	* Transform the outcomes -> generate "proxy for linear trend"
+	* Transform the outcomes; generate "proxy for linear trend"
 	gen lin_trend_int_XX=outcome_XX-outcome_XX[_n-1] if time_XX==F_g_XX-1
 	bys group_XX: gegen lin_trend_XX=mean(lin_trend_int_XX)
 	drop lin_trend_int_XX
 	
 	* Then take this into account when calculating the effects
-
 }
 
 
-* check agains the number of specified effects 
+* check again the number of specified effects 
 if `effects'>l_XX{
 	di as error ""
 	di as error "The number of effects requested is too large."
@@ -171,7 +190,6 @@ if `placebo'!=0{
 		local placebo=l_placebo_XX
 	}
 
-	* Adjust this error message?
 	if `effects'<`placebo'{
 		di as error ""
 		di as error "The number of placebo requested cannot be larger than the number of effects requested."
@@ -201,17 +219,14 @@ if "`trends_lin'"!=""{
 	}
 }
 
-// Note: Now for placebo_1 we replace the treatment with the treatment for effect_2, for placebo_2 with with effect_3 and so on, is this correct?
-// If not it should be fine to just replace [_n+2*`i'] by [_n+2*`i'-1]
-
 }
 
 
-* Felix: option to scale by cummulative treatment change ("dynamic")
+* Modif Felix: option to scale by cummulative treatment change ("dynamic")
 if "`dynamic'"!=""{
 	
 	cap drop cummulative_XX
-	gen cummulative_XX=treatment_XX if F_g_XX==time_XX // Felix: changed for new option
+	gen cummulative_XX=treatment_XX if F_g_XX==time_XX
 	
 	* Generate the cummulative treatment change	
 	replace cummulative_XX=cummulative_XX[_n-1]+treatment_XX if group_XX==group_XX[_n-1] & cummulative_XX[_n-1]!=.
@@ -234,8 +249,8 @@ if "`dynamic'"!=""{
 	
 }
 
-* matrix storing all results (add version with baseline period for graph later)
-mat res_XX=J(`effects'+`placebo',8,.)
+* matrix storing all results
+mat res_XX=J(`effects'+`placebo',10,.)
 local rownames ""
 
 if "`yatchew'" != "" {
@@ -251,18 +266,18 @@ forvalue i=1/`placebo'{
 	
 	cap drop placebo_`i'
 	if "`trends_lin'"==""{
-	gen placebo_`i'=outcome_XX-outcome_XX[_n+`i'] if group_XX==group_XX[_n+`i'] & F_g_XX==time_XX[_n+`i'+1] // Felix: changed for new option
+	gen placebo_`i'=outcome_XX-outcome_XX[_n+`i'] if group_XX==group_XX[_n+`i'] & F_g_XX==time_XX[_n+`i'+1]
 	}
 	
-	// Felix: addition for trends_lin 
+	// Modif Felix: addition for trends_lin 
 	if "`trends_lin'"!=""{
 		gen placebo_`i'=outcome_XX-outcome_XX[_n+`i'] if group_XX==group_XX[_n+`i'] & F_g_XX==time_XX[_n+`i'+2]
 		
 		replace placebo_`i'=placebo_`i'+`i'*lin_trend_XX
 	}
 	
-	did_had_est placebo_`i' group_XX treatment_XX if placebo_`i'!=., level(`level') kernel(`kernel') `dynamic' `yatchew' placebo_yatchew
-	
+	did_had_est placebo_`i' group_XX treatment_XX if placebo_`i'!=., level(`level') kernel(`kernel') bw_method(`bw_method') `dynamic' `yatchew' placebo_yatchew
+
 	matrix res_XX[`i',1]=scalar(ß_qs_XX)
 	matrix res_XX[`i',2]=scalar(se_naive_XX)
 	matrix res_XX[`i',3]=scalar(low_XX)
@@ -270,7 +285,7 @@ forvalue i=1/`placebo'{
 	matrix res_XX[`i',5]=scalar(G_XX)
 	matrix res_XX[`i',6]=scalar(h_star)
 	matrix res_XX[`i',7]=scalar(within_bw_XX)
-	matrix res_XX[`i',8]=-`i'
+	matrix res_XX[`i',10]=-`i'
 	
 	if "`yatchew'" != "" {
 		forv j = 1/5 {
@@ -285,14 +300,15 @@ forvalue i=1/`placebo'{
 forvalue i=1/`effects'{
 	
 	cap drop effect_`i'
-	gen effect_`i'=outcome_XX-outcome_XX[_n-`i'] if group_XX==group_XX[_n-`i'] & F_g_XX==time_XX[_n-`i'+1] // Felix: changed for new option
+	gen effect_`i'=outcome_XX-outcome_XX[_n-`i'] if group_XX==group_XX[_n-`i'] & F_g_XX==time_XX[_n-`i'+1] 
 	
-	// Felix: addition for trends_lin 
+	// MOdif Felix: addition for trends_lin 
 	if "`trends_lin'"!=""{
 		replace effect_`i'=effect_`i'-`i'*lin_trend_XX
-	}
-
-	did_had_est effect_`i' group_XX treatment_XX if effect_`i'!=., level(`level') kernel(`kernel') `dynamic' `yatchew'
+	}	
+	
+	did_had_est effect_`i' group_XX treatment_XX if effect_`i'!=., level(`level') kernel(`kernel') bw_method(`bw_method') `dynamic' `yatchew'
+	
 	matrix res_XX[`placebo'+`i',1]=scalar(ß_qs_XX)
 	matrix res_XX[`placebo'+`i',2]=scalar(se_naive_XX)
 	matrix res_XX[`placebo'+`i',3]=scalar(low_XX)
@@ -300,7 +316,9 @@ forvalue i=1/`effects'{
 	matrix res_XX[`placebo'+`i',5]=scalar(G_XX)
 	matrix res_XX[`placebo'+`i',6]=scalar(h_star)
 	matrix res_XX[`placebo'+`i',7]=scalar(within_bw_XX)
-	matrix res_XX[`placebo'+`i',8]=`i'
+	matrix res_XX[`placebo'+`i',8]=np_test[1,1]
+	matrix res_XX[`placebo'+`i',9]=np_test[2,1]
+	matrix res_XX[`placebo'+`i',10]=`i'
 	
 	if "`yatchew'" != "" {
 		forv j = 1/5 {
@@ -311,7 +329,7 @@ forvalue i=1/`effects'{
 	local rownames "`rownames' Effect_`i'"
 }
 
-matrix colnames res_XX = "Estimate" "SE" "LB CI" "UB CI" "N" "BW" "N in BW"
+matrix colnames res_XX = "Estimate" "SE" "LB CI" "UB CI" "N" "BW" "N in BW" "T" "p-val"
 matrix rownames res_XX = `rownames'
 if "`yatchew'" != "" {
 	matrix rownames y_res_XX = `rownames'
@@ -321,17 +339,18 @@ if "`yatchew'" != "" {
 
 *** Display the results 
 display _newline
-di as input "{hline 90}"
-di as input _skip(10) "Effect Estimates"
-di as input "{hline 90}"
-matlist res_XX[`placebo'+1...,1..7]
-di as input "{hline 90}"
+di as input "{hline 112}"
+di as input _skip(36) "Effect Estimates"_skip(46) "QUG* Test"
+di as input "{hline 90}"_skip(1)"{hline 21}"
+matlist res_XX[`placebo'+1...,1..9]
+di as input "{hline 112}"
+di as input _skip(90) "*Quasi-untreated group"
 
 if `placebo'!=0{
 * Only shown when some placebos are requested
 display _newline
 di as input "{hline 90}"
-di as input _skip(10) "Placebo Estimates"
+di as input _skip(36) "Placebo Estimates"
 di as input "{hline 90}"
 matlist res_XX[1..`placebo',1..7]
 di as input "{hline 90}"
@@ -354,10 +373,10 @@ di as input "{hline 70}"
 qui{
 
 *** Adapt matrix for Graph
-matrix mat_graph_XX=J(1,8,0) \ res_XX
+matrix mat_graph_XX=J(1,10,0) \ res_XX
 if `placebo'!=0{
 mata: res_new_XX=st_matrix("res_XX")
-mata: res_graph_XX=res_new_XX[range(`placebo',1,1),.] \ J(1,8,0) \ res_new_XX[(`placebo'+1::`placebo'+`effects'),]
+mata: res_graph_XX=res_new_XX[range(`placebo',1,1),.] \ J(1,10,0) \ res_new_XX[(`placebo'+1::`placebo'+`effects'),]
 mata: st_matrix("mat_graph_XX", res_graph_XX)
 }
 
@@ -411,10 +430,11 @@ if "`graph_off'"==""{
 preserve
 drop _all
 svmat mat_graph_XX
-twoway (scatter mat_graph_XX1 mat_graph_XX8, msize(medlarge) msymbol(o) mcolor(navy) legend(off)) ///
-	(line mat_graph_XX1 mat_graph_XX8, lcolor(navy)) (rcap mat_graph_XX3 mat_graph_XX4 mat_graph_XX8, lcolor(maroon)), ///
+twoway (rcap mat_graph_XX3 mat_graph_XX4 mat_graph_XX10, lcolor(maroon)) ///
+	(scatter mat_graph_XX1 mat_graph_XX10, msize(medlarge) msymbol(o) mcolor(navy) legend(off)) ///
+	(line mat_graph_XX1 mat_graph_XX10, lcolor(navy)) , ///
 	 title("Estimates from did_had") xtitle("Relative time to treatment change") ///
-	 ytitle("Effect") xlabel(-`placebo'(1)`effects')
+	 ytitle("Effect") xlabel(-`placebo'(1)`effects') `graph_opts'	 
 restore
 }
 
@@ -422,13 +442,15 @@ restore
 	
 end // end did_had	
 	
-*** Second interior program that runs the estimation -> builds on what was the full program before ***
+	
+	
+*** Second interior program that runs the estimation ***
 
 capture program drop did_had_est	
 	
 program did_had_est, eclass
 version 12.0
-syntax varlist(min=3 max=3 numeric) [if] [in] [, level(real 0.05) kernel(string) dynamic yatchew placebo_yatchew]	
+syntax varlist(min=3 max=3 numeric) [if] [in] [, level(real 0.05) kernel(string) bw_method(string) dynamic yatchew placebo_yatchew]	
 
 qui{
 	
@@ -468,28 +490,33 @@ preserve
 	keep `in'
 	} 	
 	
-*** Define important Variables (keeping the structure as before)
-gen double y_diff_XX=`1' // Note that this has to be in first differences -> maybe change such that I first diff in the command
+	
+*** Define important Variables
+gen double y_diff_XX=`1' // Note that this has to be in first differences
 gegen double group_est_XX=group(`2')
 gen double treatment_1_XX=`3'	 
 
-* Not needed anymore due to if condition when calling did_had_est
-/*
-bys group_est_XX: keep if y_diff_XX!=. & treatment_1_XX!=.
-bys group_est_XX: keep if _n==1 // thats the reason why we dont need to set the other values missing to get the same result
-*/
-
-*** generate squared of the treatment as we will need this 
+*** generate squared of the treatment
 gen double treatment_2_XX=treatment_1_XX^2
 gen double treatment_3_XX=treatment_1_XX^3
 gen double treatment_4_XX=treatment_1_XX^4
 gen double y_diff_2_XX=y_diff_XX^2
 
+***** Compute test that there are quasi stayers
+mata: D_2 = st_data(., "treatment_1_XX")
+mata: D_2_np = sort(select(D_2, D_2 :> 0), 1)
+mata: T = D_2_np[1,1]/(D_2_np[2,1] - D_2_np[1,1])
+mata: st_matrix("np_test", (T\(1-(1+T^(-1))^(-1))))
+mata: mata drop D_2 D_2_np T
+* Compute p-values 
+// Both test statistics converge in distribution to (E_1/E_2) where E_1 and E_2 are iid random variables from an Exponential(1) distribution
+// This yields the CDF P(T<t) = (\alpha)/(\alpha + (\beta/t)) where \alpha and \beta are the parameters of the two exponential distributions, so in this case both are 1
+
 ***** Compute optimal bandwidth, mu_hat and its bias using "lprobust" *****
 
 gen grid_XX=0 if _n==1
 
-lprobust y_diff_XX treatment_1_XX, eval(grid_XX) kernel(`kernel')
+lprobust y_diff_XX treatment_1_XX, eval(grid_XX) kernel(`kernel') bwselect(`bw_method')
 
 scalar h_star=e(Result)[1,2] 
 scalar mu_hat_XX_alt=e(Result)[1,5] 
@@ -509,7 +536,6 @@ capture drop n_group_XX
 sum y_diff_XX
 scalar mean_y_diff_XX=r(mean)
 
-* Felix: Note that this also influences the Bias and SE computation!!!
 if "`dynamic'"==""{
 	sum treatment_1_XX
 	scalar mean_treatment_XX=r(mean)
