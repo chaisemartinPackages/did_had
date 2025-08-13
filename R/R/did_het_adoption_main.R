@@ -63,7 +63,7 @@ did_het_adoption_main <- function(
     df$F_g_temp_XX <- NULL
 
     if (sd(subset(df, df$F_g_XX != T_max_XX + 1)$F_g_XX, na.rm = TRUE) != 0) {
-        stop("Not all groups change their treatment at the same period for the first time. The estimator from de Chaisemartin & D'Haultfoeuille (2024) is only valid if this condition is met.")
+        stop("Not all groups change their treatment at the same period for the first time. The estimator from de Chaisemartin et. al. (2025) is only valid if this condition is met.")
     }
 
     # Save treatment onset period as a scalar

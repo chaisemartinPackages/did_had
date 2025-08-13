@@ -114,7 +114,7 @@ if r(sd)!=0{
 	di as error ""
 	di as error "Not all groups change their treatment"
 	di as error "at the same period for the first time."
-	di as error "The estimator from de Chaisemartin & D'Haultfoeuille (2024)"
+	di as error "The estimator from de Chaisemartin et. al. (2025)"
 	di as error "is only valid if this condition is met."
 	exit
 }
@@ -340,10 +340,11 @@ if "`yatchew'" != "" {
 *** Display the results 
 display _newline
 di as input "{hline 112}"
-di as input _skip(36) "Effect Estimates"_skip(46) "QUG Test"
+di as input _skip(36) "Effect Estimates"_skip(46) "QUG* Test"
 di as input "{hline 90}"_skip(1)"{hline 21}"
 matlist res_XX[`placebo'+1...,1..9]
 di as input "{hline 112}"
+di as input _skip(90) "*Quasi-untreated group"
 
 if `placebo'!=0{
 * Only shown when some placebos are requested
