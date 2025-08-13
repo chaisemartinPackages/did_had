@@ -27,9 +27,10 @@ print.did_had <- function(x, ...) {
     h_set <- header_set(dis,1)
     cat(noquote(strrep("-", sum(h_set)+2)));cat("\n");
     cat(strrep(" ", h_set[1]+floor((h_set[2]-16)/2)+1));cat("Effect Estimates");
-    cat(strrep(" ",floor((h_set[2]-16)/2)+2+floor((h_set[3]-8)/2)));cat("QUG Test");cat("\n");
+    cat(strrep(" ",floor((h_set[2]-16)/2)+2+floor((h_set[3]-8)/2)));cat("QUG* Test");cat("\n");
     cat(noquote(strrep(" ",h_set[1]+1)));cat(noquote(strrep("-",h_set[2])));cat(" ");cat(noquote(strrep("-",h_set[3])));cat("\n");
     print(noquote(dis[,1:9, drop = FALSE]))
+    cat("*Quasi-Untreated Group\n")
 
     if (x$results$res.placebo > 0) {
         cat("\n")
