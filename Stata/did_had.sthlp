@@ -116,7 +116,9 @@ By default, the program uses a epanechnikov kernel.
 {p_end}
 
 {p 4 8}
-{cmd:bw_method(}{it:string}{cmd:)} allows you to specify the bandwidth selection procedure used by {cmd:lprobust}. Possible choices are {opt mse-dpi}, {opt mse-rot}, {opt imse-dpi}, {opt imse-rot}, {opt ce-dpi} and {opt ce-rot}. By default, the program uses {opt mse-dpi}. For more details please consult the {opt lprobust} helpfile.
+{cmd:bw_method(}{it:string}{cmd:)} allows you to specify the bandwidth selection procedure used by {cmd:lprobust}. 
+Possible choices are {opt mse-dpi}, {opt mse-rot}, {opt imse-dpi}, {opt imse-rot}, {opt ce-dpi} and {opt ce-rot}. 
+By default, the program uses {opt mse-dpi}. For more details please consult the {opt lprobust} helpfile.
 {p_end}
 
 {p 4 8} 
